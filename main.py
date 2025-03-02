@@ -1,5 +1,6 @@
 import pygame
-from scenes import SceneManager, MainMenuScene, GameScene, PauseMenuScene, GameOverScene
+from scenes import MainMenuScene, GameScene, PauseMenuScene, GameOverScene
+from managers import SceneManager
 from utils.logger import GameLogger
 
 # Get a logger for the main module
