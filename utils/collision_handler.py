@@ -1,6 +1,7 @@
 """Handle collisions between game objects."""
 
 from utils.logger import GameLogger
+from constants import POWERUP_COLORS
 
 # Get a logger for the collision handler module
 logger = GameLogger.get_logger("collision_handler")
@@ -31,6 +32,14 @@ def handle_player_powerup_collision(player, powerup):
         bool: True if powerup was applied, False otherwise.
     """
     logger.debug(f"Player collided with {powerup.type} Powerup {powerup.id}")
+
+    # Trigger visual effect with the powerup's color
+    if hasattr(player, "start_flash_effect"):
+        # Get the color for the visual effect
+        color = POWERUP_COLORS.get(powerup.type, (255, 255, 255))
+        player.start_flash_effect(color)
+
+    # Apply the powerup effect
     return powerup.apply_effect(player)
 
 

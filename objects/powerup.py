@@ -1,4 +1,5 @@
 import pygame
+import math
 from utils.logger import GameLogger
 from constants import (
     POWERUP_WIDTH,
@@ -33,17 +34,57 @@ class Powerup(pygame.sprite.Sprite):
 
         self.type = powerup_type
         self.active = True
+        self.creation_time = pygame.time.get_ticks()
+        self.lifespan = 10000  # 10 seconds lifespan
 
-        # Create the powerup sprite
-        self.image = pygame.Surface((POWERUP_WIDTH, POWERUP_HEIGHT))
-        color = POWERUP_COLORS.get(
-            powerup_type, (255, 255, 255)
-        )  # Default to white if type not found
-        self.image.fill(color)
+        # Animation properties
+        self.base_size = (POWERUP_WIDTH, POWERUP_HEIGHT)
+        self.pulse_factor = 0
+        self.pulse_speed = 0.1
+        self.pulse_size = 4  # Max amount to pulse
+
+        # Create the powerup sprite with initial size
+        self._create_image()
         self.rect = self.image.get_rect()
         self.rect.center = position
+        self._orig_center = position  # Store original center for animation
 
         logger.debug(f"Powerup {self.id} of type {powerup_type} created at position {position}")
+
+    def _create_image(self):
+        """Create the powerup image with the current pulse size."""
+        # Calculate current size based on pulse
+        pulse_offset = self.pulse_factor * self.pulse_size
+        current_width = self.base_size[0] + pulse_offset
+        current_height = self.base_size[1] + pulse_offset
+
+        # Create the surface
+        self.image = pygame.Surface((int(current_width), int(current_height)))
+        color = POWERUP_COLORS.get(self.type, (255, 255, 255))  # Default to white if type not found
+        self.image.fill(color)
+
+        # Add a visual indicator for the powerup type
+        if self.type == "health":
+            # Add a plus sign for health
+            pygame.draw.rect(
+                self.image,
+                (255, 255, 255),
+                (int(current_width / 2 - 2), int(current_height / 4), 4, int(current_height / 2)),
+            )
+            pygame.draw.rect(
+                self.image,
+                (255, 255, 255),
+                (int(current_width / 4), int(current_height / 2 - 2), int(current_width / 2), 4),
+            )
+        elif self.type == "shield":
+            # Add a circle for shield
+            pygame.draw.circle(
+                self.image,
+                (255, 255, 255),
+                (int(current_width / 2), int(current_height / 2)),
+                int(min(current_width, current_height) / 3),
+                2,
+            )
 
     def apply_effect(self, player):
         """Apply the powerup effect to the player.
@@ -59,11 +100,13 @@ class Powerup(pygame.sprite.Sprite):
 
         if self.type == "health":
             # Restore health
+            original_health = player.current_health
             player.current_health = min(
                 player.current_health + POWERUP_HEALTH_RESTORE, player.max_health
             )
+            health_gained = player.current_health - original_health
             logger.info(
-                f"Health powerup applied. Player health now: {player.current_health}/{player.max_health}"
+                f"Health powerup applied. Player gained {health_gained} health. Health now: {player.current_health}/{player.max_health}"
             )
 
         elif self.type == "shield":
@@ -86,5 +129,21 @@ class Powerup(pygame.sprite.Sprite):
 
     def update(self):
         """Update the powerup state each frame."""
-        # Add any animation or movement logic here if needed
-        pass
+        current_time = pygame.time.get_ticks()
+
+        # Check if powerup has expired
+        if current_time - self.creation_time > self.lifespan:
+            logger.debug(f"Powerup {self.id} expired")
+            self.kill()
+            return
+
+        # Update pulsing animation
+        self.pulse_factor = (
+            math.sin(current_time * self.pulse_speed * 0.001) + 1
+        ) / 2  # Value between 0 and 1
+
+        # Recreate the image with the new pulse size
+        prev_center = self.rect.center
+        self._create_image()
+        self.rect = self.image.get_rect()
+        self.rect.center = prev_center

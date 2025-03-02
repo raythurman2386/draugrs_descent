@@ -1,9 +1,10 @@
 import pygame
 import random
 from .scene import Scene
-from objects import Player, Enemy
+from objects import Player, Enemy, Powerup
 from utils.logger import GameLogger
 from utils.utils import adjust_log_level
+from utils import handle_player_powerup_collision, handle_player_enemy_collision
 from constants import (
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
@@ -33,6 +34,7 @@ class GameScene(Scene):
         self.all_sprites = pygame.sprite.Group(self.player)
         self.enemy_group = pygame.sprite.Group()
         self.projectile_group = pygame.sprite.Group()
+        self.powerup_group = pygame.sprite.Group()
 
         # Set player references
         self.player.screen = self.screen
@@ -50,6 +52,7 @@ class GameScene(Scene):
         self.enemies_killed = 0
         self.time_survived = 0
         self.start_time = pygame.time.get_ticks()
+        self.powerups_collected = 0
 
         logger.info("GameScene initialized")
 
@@ -109,6 +112,7 @@ class GameScene(Scene):
             self.player.update()
             self.enemy_group.update(self.player.rect.center)
             self.projectile_group.update()
+            self.powerup_group.update()
             self.check_collisions()
             self.spawn_enemy()
 
@@ -118,7 +122,7 @@ class GameScene(Scene):
             # Check for game over
             if self.player.current_health <= 0:
                 logger.info(
-                    f"Game over. Enemies killed: {self.enemies_killed}, Time survived: {self.time_survived}s"
+                    f"Game over. Enemies killed: {self.enemies_killed}, Powerups: {self.powerups_collected}, Time survived: {self.time_survived}s"
                 )
                 self.switch_to_scene("game_over")
 
@@ -129,18 +133,50 @@ class GameScene(Scene):
         for projectile, enemies in hits.items():
             for enemy in enemies:
                 # Use the enemy's take_damage method
-                if enemy.take_damage(10):
-                    enemy.kill()
-                    self.enemies_killed += 1
+                if enemy.take_damage(projectile.damage):
+                    self.handle_enemy_death(enemy)
                     logger.debug(f"Enemy killed. Total killed: {self.enemies_killed}")
 
         # Player vs Enemies
         if not self.player.invincible:
             enemy_collisions = pygame.sprite.spritecollide(self.player, self.enemy_group, False)
-            if enemy_collisions:
-                # Use the new take_damage method
-                if self.player.take_damage(10):
-                    logger.warning("Player died from enemy collision")
+            for enemy in enemy_collisions:
+                handle_player_enemy_collision(self.player, enemy)
+
+        # Player vs Powerups
+        powerup_collisions = pygame.sprite.spritecollide(self.player, self.powerup_group, False)
+        for powerup in powerup_collisions:
+            if powerup.active:
+                handle_player_powerup_collision(self.player, powerup)
+                powerup.kill()  # Remove from all sprite groups
+                self.powerups_collected += 1
+                logger.info(
+                    f"Powerup collected: {powerup.type}. Total collected: {self.powerups_collected}"
+                )
+
+    def handle_enemy_death(self, enemy):
+        """Handle an enemy's death, including potential powerup drops."""
+        # Remove enemy
+        enemy.kill()
+        self.enemies_killed += 1
+
+        # Random chance to drop a powerup (25% chance)
+        if random.random() < 0.25:  # 25% chance
+            self.drop_powerup(enemy.rect.center)
+
+    def drop_powerup(self, position):
+        """Create a random powerup at the given position and add it to the game."""
+        # Select a random powerup type
+        powerup_type = random.choice(["health", "shield"])
+
+        # Create the powerup
+        powerup = Powerup(position, powerup_type)
+
+        # Add to sprite groups
+        self.powerup_group.add(powerup)
+        self.all_sprites.add(powerup)
+
+        logger.debug(f"Dropped {powerup_type} powerup at {position}")
 
     def render(self):
         """Draw the game scene."""
@@ -160,4 +196,7 @@ class GameScene(Scene):
 
         # Draw game stats
         self.draw_text(f"Enemies: {self.enemies_killed}", (255, 255, 255), SCREEN_WIDTH - 100, 20)
-        self.draw_text(f"Time: {self.time_survived}s", (255, 255, 255), SCREEN_WIDTH - 100, 50)
+        self.draw_text(
+            f"Powerups: {self.powerups_collected}", (255, 255, 255), SCREEN_WIDTH - 100, 50
+        )
+        self.draw_text(f"Time: {self.time_survived}s", (255, 255, 255), SCREEN_WIDTH - 100, 80)
