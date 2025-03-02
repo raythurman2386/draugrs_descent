@@ -13,6 +13,8 @@ from constants import (
     PLAYER_MOVEMENT_SPEED,
     PLAYER_SHOT_COOLDOWN,
     PLAYER_INVINCIBILITY_DURATION,
+    POWERUP_WEAPON_BOOST_FACTOR,
+    POWERUP_WEAPON_BOOST_DURATION,
 )
 
 # Get a logger for the player module
@@ -33,6 +35,12 @@ class Player(pygame.sprite.Sprite):
         self.invincible_duration = PLAYER_INVINCIBILITY_DURATION
         self.last_shot_time = 0
         self.shot_cooldown = PLAYER_SHOT_COOLDOWN
+        
+        # Weapon boost properties
+        self.weapon_boost_active = False
+        self.weapon_boost_timer = 0
+        self.weapon_boost_duration = 0
+        self.base_shot_cooldown = PLAYER_SHOT_COOLDOWN
 
         # Visual effect properties
         self.flash_effect = False
@@ -91,6 +99,13 @@ class Player(pygame.sprite.Sprite):
             if current_time - self.invincible_timer > self.invincible_duration:
                 self.invincible = False
                 logger.debug("Player invincibility ended")
+
+        # Check for weapon boost expiration
+        if self.weapon_boost_active:
+            current_time = pygame.time.get_ticks()
+            if current_time - self.weapon_boost_timer > self.weapon_boost_duration:
+                self.deactivate_weapon_boost()
+                logger.debug("Weapon boost expired")
 
         # Update visual effects
         self.update_visual_effects()
@@ -167,3 +182,20 @@ class Player(pygame.sprite.Sprite):
                 # End flash effect
                 self.flash_effect = False
                 logger.debug("Flash effect ended")
+
+    def activate_weapon_boost(self, duration=POWERUP_WEAPON_BOOST_DURATION):
+        """Activate weapon boost, increasing fire rate."""
+        self.weapon_boost_active = True
+        self.weapon_boost_timer = pygame.time.get_ticks()
+        self.weapon_boost_duration = duration
+        
+        # Reduce shot cooldown (increase fire rate)
+        self.shot_cooldown = int(self.base_shot_cooldown * (1 - POWERUP_WEAPON_BOOST_FACTOR))
+        logger.info(f"Weapon boost activated. Shot cooldown reduced to {self.shot_cooldown}ms for {duration}ms")
+    
+    def deactivate_weapon_boost(self):
+        """Deactivate weapon boost, restoring normal fire rate."""
+        if self.weapon_boost_active:
+            self.weapon_boost_active = False
+            self.shot_cooldown = self.base_shot_cooldown
+            logger.info("Weapon boost deactivated. Shot cooldown restored to normal.")

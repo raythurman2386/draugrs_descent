@@ -9,6 +9,8 @@ BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 WHITE = (255, 255, 255)
+YELLOW = (255, 255, 0)
+ORANGE = (255, 165, 0)
 
 # Game Mechanics
 FRAME_RATE = 60
@@ -52,8 +54,11 @@ POWERUP_HEALTH_RESTORE = 25
 POWERUP_SHIELD_DURATION = 5000  # milliseconds
 POWERUP_SPEED_BOOST = 2
 POWERUP_SPEED_DURATION = 5000  # milliseconds
+POWERUP_WEAPON_BOOST_FACTOR = 0.5  # 50% faster fire rate
+POWERUP_WEAPON_BOOST_DURATION = 10000  # 10 seconds
 POWERUP_COLORS = {
     "health": (0, 255, 0),  # Green
     "shield": (0, 0, 255),  # Blue
     "speed": (255, 255, 0),  # Yellow
+    "weapon": (255, 165, 0),  # Orange
 }

@@ -7,6 +7,7 @@ from constants import (
     POWERUP_COLORS,
     POWERUP_HEALTH_RESTORE,
     POWERUP_SHIELD_DURATION,
+    POWERUP_WEAPON_BOOST_DURATION,
 )
 
 # Get a logger for the powerup module
@@ -85,6 +86,15 @@ class Powerup(pygame.sprite.Sprite):
                 int(min(current_width, current_height) / 3),
                 2,
             )
+        elif self.type == "weapon":
+            # Add a lightning bolt for weapon boost
+            points = [
+                (int(current_width / 2), int(current_height / 4)),  # Top middle
+                (int(current_width / 2 + current_width / 5), int(current_height / 2)),  # Right middle
+                (int(current_width / 2), int(current_height / 2)),  # Center
+                (int(current_width / 2 - current_width / 5), int(current_height * 3 / 4)),  # Bottom left
+            ]
+            pygame.draw.lines(self.image, (255, 255, 255), False, points, 2)
 
     def apply_effect(self, player):
         """Apply the powerup effect to the player.
@@ -116,6 +126,13 @@ class Powerup(pygame.sprite.Sprite):
             player.invincible_duration = POWERUP_SHIELD_DURATION
             logger.info(
                 f"Shield powerup applied. Player invincible for {POWERUP_SHIELD_DURATION}ms"
+            )
+
+        elif self.type == "weapon":
+            # Apply weapon boost (increased fire rate)
+            player.activate_weapon_boost(POWERUP_WEAPON_BOOST_DURATION)
+            logger.info(
+                f"Weapon boost powerup applied. Player's fire rate increased for {POWERUP_WEAPON_BOOST_DURATION}ms"
             )
 
         # Deactivate the powerup after use

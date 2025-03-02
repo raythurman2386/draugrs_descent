@@ -7,8 +7,8 @@ This document outlines the planned development path for Draugr's Descent, organi
 ### Gameplay Improvements
 - [ ] Add different enemy types with unique behaviors (chargers, ranged attackers, etc.)
 - [ ] Implement player character upgrades (increased health, speed, fire rate)
-- [ ] Create a basic item/power-up system (health pack, shield, weapon boost)
-- [ ] Add a scoring system with high scores table
+- [x] Create a basic item/power-up system (health pack, shield, weapon boost)
+- [x] Add a scoring system with high scores table
 
 ### Visual Enhancements
 - [ ] Replace placeholder graphics with proper sprites

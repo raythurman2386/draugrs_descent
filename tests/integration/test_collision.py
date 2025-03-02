@@ -31,6 +31,7 @@ class TestCollisionDetection:
 
     def test_player_powerup_collision(self, pygame_setup, mock_screen):
         """Test that player and powerup collisions are properly detected and handled."""
+        # Test 1: Health powerup
         # Create a player and a powerup at the same position
         player = Player((100, 100))
         player.current_health = 50  # Reduce health to see the effect
@@ -47,6 +48,24 @@ class TestCollisionDetection:
         assert player.current_health > 50
         # Powerup should be deactivated
         assert not powerup.active
+        
+        # Test 2: Weapon boost powerup
+        player = Player((100, 100))
+        original_cooldown = player.shot_cooldown
+        weapon_powerup = Powerup((100, 100), "weapon")
+        
+        # Test collision
+        collided = pygame.sprite.collide_rect(player, weapon_powerup)
+        assert collided
+        
+        # Call the collision handler
+        collision_handler.handle_player_powerup_collision(player, weapon_powerup)
+        
+        # Player should have weapon boost active with reduced cooldown
+        assert player.weapon_boost_active
+        assert player.shot_cooldown < original_cooldown
+        # Powerup should be deactivated
+        assert not weapon_powerup.active
 
     def test_projectile_enemy_collision(self, pygame_setup, mock_screen):
         """Test that projectile and enemy collisions are properly detected and handled."""

@@ -5,6 +5,7 @@ from objects import Player, Enemy, Powerup
 from utils.logger import GameLogger
 from utils.utils import adjust_log_level
 from utils import handle_player_powerup_collision, handle_player_enemy_collision
+from utils.scoring import ScoreManager
 from constants import (
     SCREEN_WIDTH,
     SCREEN_HEIGHT,
@@ -51,6 +52,12 @@ class GameScene(Scene):
 
         # Pause flag
         self.paused = False
+
+        # Initialize score manager
+        self.score_manager = ScoreManager()
+        
+        # Last time score was updated for time survived
+        self.last_time_score_update = pygame.time.get_ticks()
 
         # Game stats
         self.enemies_killed = 0
@@ -126,13 +133,33 @@ class GameScene(Scene):
             self.spawn_enemy()
 
             # Update time survived
-            self.time_survived = (pygame.time.get_ticks() - self.start_time) // 1000
+            current_time = pygame.time.get_ticks()
+            self.time_survived = (current_time - self.start_time) // 1000
+            
+            # Add points for time survived (every 5 seconds)
+            if current_time - self.last_time_score_update >= 5000:  # 5 seconds
+                seconds_since_last_update = (current_time - self.last_time_score_update) // 1000
+                self.score_manager.add_time_survived_points(seconds_since_last_update)
+                self.last_time_score_update = current_time
 
             # Check for game over
             if self.player.current_health <= 0:
+                # Save high score before game over
+                self.score_manager.save_high_score()
+                
                 logger.info(
-                    f"Game over. Enemies killed: {self.enemies_killed}, Powerups: {self.powerups_collected}, Time survived: {self.time_survived}s"
+                    f"Game over. Score: {self.score_manager.current_score}, High Score: {self.score_manager.high_score}, "
+                    f"Enemies killed: {self.enemies_killed}, Powerups: {self.powerups_collected}, Time survived: {self.time_survived}s"
                 )
+                
+                # Pass game stats to the game over scene
+                game_over_scene = self.scene_manager.scenes["game_over"]
+                game_over_scene.final_score = self.score_manager.current_score
+                game_over_scene.high_score = self.score_manager.high_score
+                game_over_scene.enemies_killed = self.enemies_killed
+                game_over_scene.powerups_collected = self.powerups_collected
+                game_over_scene.time_survived = self.time_survived
+                
                 self.switch_to_scene("game_over")
 
     def check_collisions(self):
@@ -159,6 +186,10 @@ class GameScene(Scene):
                 handle_player_powerup_collision(self.player, powerup)
                 powerup.kill()  # Remove from all sprite groups
                 self.powerups_collected += 1
+                
+                # Update score
+                self.score_manager.powerup_collected()
+                
                 logger.info(
                     f"Powerup collected: {powerup.type}. Total collected: {self.powerups_collected}"
                 )
@@ -168,6 +199,9 @@ class GameScene(Scene):
         # Remove enemy
         enemy.kill()
         self.enemies_killed += 1
+        
+        # Update score
+        self.score_manager.enemy_defeated()
 
         # Random chance to drop a powerup (25% chance)
         if random.random() < 0.25:  # 25% chance
@@ -176,7 +210,7 @@ class GameScene(Scene):
     def drop_powerup(self, position):
         """Create a random powerup at the given position and add it to the game."""
         # Select a random powerup type
-        powerup_type = random.choice(["health", "shield"])
+        powerup_type = random.choice(["health", "shield", "weapon"])
 
         # Create the powerup
         powerup = Powerup(position, powerup_type)
@@ -209,3 +243,10 @@ class GameScene(Scene):
             f"Powerups: {self.powerups_collected}", (255, 255, 255), SCREEN_WIDTH - 100, 50
         )
         self.draw_text(f"Time: {self.time_survived}s", (255, 255, 255), SCREEN_WIDTH - 100, 80)
+        
+        # Draw score
+        score_text = f"Score: {self.score_manager.get_formatted_score()}"
+        high_score_text = f"High: {self.score_manager.get_formatted_high_score()}"
+        
+        self.draw_text(score_text, (255, 255, 0), SCREEN_WIDTH // 2, 20)  # Yellow color for score
+        self.draw_text(high_score_text, (255, 165, 0), SCREEN_WIDTH // 2, 50)  # Orange color for high score
