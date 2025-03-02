@@ -31,6 +31,14 @@ class GameOverScene(Scene):
                 if action == "exit":
                     self.done = True
                 else:
+                    # Make sure game is reset if starting a new game
+                    if action == "game" and self.scene_manager:
+                        game_scene = self.scene_manager.scenes.get("game")
+                        if game_scene:
+                            # Always reset the game when starting from game over
+                            game_scene.reset()
+                            # Ensure the game isn't paused
+                            game_scene.paused = False
                     self.switch_to_scene(action)
 
     def update(self):

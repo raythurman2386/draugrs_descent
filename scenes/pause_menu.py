@@ -34,10 +34,29 @@ class PauseMenuScene(Scene):
                 action = self.menu_options[self.selected_option]["action"]
                 if action == "exit":
                     self.done = True
+                elif action == "game":
+                    # Just unpause the game to resume
+                    if self.scene_manager:
+                        game_scene = self.scene_manager.scenes.get("game")
+                        if game_scene:
+                            game_scene.paused = False
+                    self.switch_to_scene(action)
+                elif action == "main_menu":
+                    # If returning to main menu, reset the game state for later
+                    if self.scene_manager:
+                        game_scene = self.scene_manager.scenes.get("game")
+                        if game_scene:
+                            game_scene.reset()
+                    self.switch_to_scene(action)
                 else:
                     self.switch_to_scene(action)
             elif event.key == pygame.K_ESCAPE:
                 # Pressing escape again returns to game
+                # Just unpause the game to resume
+                if self.scene_manager:
+                    game_scene = self.scene_manager.scenes.get("game")
+                    if game_scene:
+                        game_scene.paused = False
                 self.switch_to_scene("game")
 
     def update(self):

@@ -28,7 +28,11 @@ class GameScene(Scene):
         super().__init__()
 
         logger.info("Initializing GameScene")
+        
+        self._initialize_game()
 
+    def _initialize_game(self):
+        """Initialize or reinitialize all game objects and state."""
         # Create game object groups
         self.player = Player()
         self.all_sprites = pygame.sprite.Group(self.player)
@@ -53,8 +57,13 @@ class GameScene(Scene):
         self.time_survived = 0
         self.start_time = pygame.time.get_ticks()
         self.powerups_collected = 0
+        
+        logger.info("Game state initialized/reinitialized")
 
-        logger.info("GameScene initialized")
+    def reset(self):
+        """Reset the game scene to initial state when returning to this scene."""
+        logger.info("Resetting GameScene")
+        self._initialize_game()
 
     def spawn_enemy(self):
         """Spawn an enemy at a random screen edge."""

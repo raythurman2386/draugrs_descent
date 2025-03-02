@@ -33,6 +33,64 @@ This document outlines the planned development path for Draugr's Descent, organi
 - [ ] Implement boss enemies with complex patterns
 - [ ] Add weapon variety with different projectile behaviors
 - [ ] Design an upgrade/progression system
+- [ ] Implement multiple game modes (Endless and Story)
+  - **Endless Mode**:
+    - Wave-based progression with increasing difficulty
+    - Boss waves every 5-10 regular waves
+    - Dynamic enemy spawning and scaling
+    - High score system for longest survival
+  - **Story Mode**:
+    - Level-based progression with distinct environments
+    - Narrative elements between levels
+    - Unique boss encounters
+    - Unlockable content through progression
+
+### Game Modes Implementation Details
+
+#### Endless Mode Architecture
+- Create a `WaveManager` class to handle:
+  - Progressive wave difficulty
+  - Enemy count scaling
+  - Spawn rate adjustment
+  - Boss wave integration
+- Required components:
+  - New `managers/wave_manager.py` file
+  - UI elements for wave indicators
+  - Wave transition effects
+  - Dynamic difficulty scaling
+
+#### Story Mode Architecture
+- Create a `LevelManager` to handle:
+  - Level configurations and loading
+  - Progress tracking
+  - Environment transitions
+  - Narrative sequences
+- Required components:
+  - New `managers/level_manager.py` file
+  - Level data files (JSON/YAML)
+  - Cutscene system
+  - Level selection interface
+  - Save/load functionality for progress
+
+#### Required File Structure Changes
+```
+draugrs_descent/
+├── scenes/
+│   ├── game_modes/
+│   │   ├── endless_scene.py
+│   │   ├── level_scene.py
+│   │   ├── cutscene_scene.py
+│   │   └── level_select_scene.py
+├── managers/
+│   ├── wave_manager.py
+│   └── level_manager.py
+├── data/
+│   ├── levels/
+│   │   ├── level1.json
+│   │   └── level2.json
+│   └── story/
+│       └── cutscenes.json
+```
 
 ### Features
 - [ ] Create a tutorial level
@@ -74,6 +132,18 @@ This document outlines the planned development path for Draugr's Descent, organi
 - [ ] Alternative game modes (survival, time attack, etc.)
 - [ ] Interactive environments with destructible elements
 - [ ] Stealth mechanics
+- [ ] Endless Mode enhancements:
+  - Special wave types (speed waves, elite waves, horde waves)
+  - Environment changes every X waves
+  - Random events and mutators between waves
+  - Prestige system with permanent upgrades
+  - Challenge modes with special rules
+- [ ] Story Mode enhancements:
+  - Side quests and optional objectives
+  - Multiple story paths and endings
+  - Character customization with visual effects
+  - NPC allies with unique abilities
+  - Environmental puzzles and interactive elements
 
 ## Release Plan
 
@@ -92,10 +162,23 @@ This document outlines the planned development path for Draugr's Descent, organi
 - Progression system
 - Basic UI and menus
 
+### v0.4 - Game Modes Prototype
+- Endless Mode with wave system
+- Initial Story Mode framework
+- Boss enemy prototypes
+- Save/load system for game progress
+
+### v0.5 - Game Modes Alpha
+- Refined Endless Mode with full wave scaling
+- Expanded Story Mode with multiple levels
+- Complete boss battle system
+- Enhanced UI for game mode selection
+
 ### v1.0 - Full Release
 - Complete feature set
 - Polished visuals and audio
 - Tutorial and documentation
+- Balanced gameplay across all modes
 
 ## Contribution Guidelines
 

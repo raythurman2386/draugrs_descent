@@ -10,6 +10,7 @@ class Scene:
         self.screen = pygame.display.get_surface()
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont("Arial", 32)
+        self.scene_manager = None  # Will be set by SceneManager
 
     def process_events(self, events):
         """Process all events."""

@@ -12,11 +12,17 @@ class SceneManager:
     def add_scene(self, scene_name, scene_instance):
         """Add a scene to the manager."""
         self.scenes[scene_name] = scene_instance
+        # Set scene_manager reference in the scene
+        scene_instance.scene_manager = self
 
     def set_active_scene(self, scene_name):
         """Set the active scene."""
         if scene_name in self.scenes:
             self.current_scene = self.scenes[scene_name]
+            
+            # We no longer automatically reset scenes here
+            # This allows the game to properly resume from pause
+            
             pygame.display.set_caption(f"Draugr's Descent - {scene_name}")
         else:
             raise ValueError(f"Scene '{scene_name}' not found.")
