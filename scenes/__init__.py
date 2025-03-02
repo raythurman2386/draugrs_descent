@@ -6,10 +6,10 @@ from .game_over import GameOverScene
 from .scene_manager import SceneManager
 
 __all__ = [
-    'Scene',
-    'MainMenuScene',
-    'GameScene',
-    'PauseMenuScene',
-    'GameOverScene',
-    'SceneManager'
+    "Scene",
+    "MainMenuScene",
+    "GameScene",
+    "PauseMenuScene",
+    "GameOverScene",
+    "SceneManager",
 ]

@@ -14,10 +14,10 @@ WHITE = (255, 255, 255)
 FRAME_RATE = 60
 ENEMY_SPAWN_INTERVAL = 1000  # milliseconds
 ENEMY_SPAWN_EDGES = {
-    'TOP': (0, -30),
-    'BOTTOM': (0, 630),
-    'LEFT': (-30, 0),
-    'RIGHT': (830, 0)
+    "TOP": (0, -30),
+    "BOTTOM": (0, 630),
+    "LEFT": (-30, 0),
+    "RIGHT": (830, 0),
 }
 
 # Player Constants
@@ -44,3 +44,16 @@ PROJECTILE_DAMAGE = 10
 # Health Bar
 HEALTH_BAR_WIDTH = 200
 HEALTH_BAR_HEIGHT = 20
+
+# Powerup Constants
+POWERUP_WIDTH = 25
+POWERUP_HEIGHT = 25
+POWERUP_HEALTH_RESTORE = 25
+POWERUP_SHIELD_DURATION = 5000  # milliseconds
+POWERUP_SPEED_BOOST = 2
+POWERUP_SPEED_DURATION = 5000  # milliseconds
+POWERUP_COLORS = {
+    "health": (0, 255, 0),  # Green
+    "shield": (0, 0, 255),  # Blue
+    "speed": (255, 255, 0),  # Yellow
+}

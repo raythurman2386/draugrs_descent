@@ -1,31 +1,32 @@
 import pygame
-from constants import (
-    PROJECTILE_WIDTH, PROJECTILE_HEIGHT, WHITE,
-    PROJECTILE_DAMAGE
-)
+from constants import PROJECTILE_WIDTH, PROJECTILE_HEIGHT, WHITE, PROJECTILE_DAMAGE
 from utils.logger import GameLogger
 
 # Get a logger for the projectile module
 logger = GameLogger.get_logger("projectile")
 
+
 class Projectile(pygame.sprite.Sprite):
     # Counter for unique projectile IDs
     next_id = 1
-    
-    def __init__(self, position, velocity):
+
+    def __init__(self, position, velocity, damage=None):
         super().__init__()
         # Assign a unique ID to each projectile
         self.id = Projectile.next_id
         Projectile.next_id += 1
-        
+
         self.image = pygame.Surface((PROJECTILE_WIDTH, PROJECTILE_HEIGHT))
         self.image.fill(WHITE)
         self.rect = self.image.get_rect()
         self.rect.center = position
         self.velocity = velocity
-        self.damage = PROJECTILE_DAMAGE
-        
-        logger.debug(f"Projectile {self.id} created at {position} with velocity {velocity}")
+        self.damage = damage if damage is not None else PROJECTILE_DAMAGE
+        self.active = True  # Added active attribute
+
+        logger.debug(
+            f"Projectile {self.id} created at {position} with velocity {velocity}"
+        )
 
     def update(self):
         # Move the projectile based on its velocity
@@ -36,4 +37,5 @@ class Projectile(pygame.sprite.Sprite):
         screen_rect = pygame.display.get_surface().get_rect()
         if not screen_rect.colliderect(self.rect):
             logger.debug(f"Projectile {self.id} went off-screen and was removed")
+            self.active = False  # Set active to false
             self.kill()
