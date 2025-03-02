@@ -90,9 +90,15 @@ class Powerup(pygame.sprite.Sprite):
             # Add a lightning bolt for weapon boost
             points = [
                 (int(current_width / 2), int(current_height / 4)),  # Top middle
-                (int(current_width / 2 + current_width / 5), int(current_height / 2)),  # Right middle
+                (
+                    int(current_width / 2 + current_width / 5),
+                    int(current_height / 2),
+                ),  # Right middle
                 (int(current_width / 2), int(current_height / 2)),  # Center
-                (int(current_width / 2 - current_width / 5), int(current_height * 3 / 4)),  # Bottom left
+                (
+                    int(current_width / 2 - current_width / 5),
+                    int(current_height * 3 / 4),
+                ),  # Bottom left
             ]
             pygame.draw.lines(self.image, (255, 255, 255), False, points, 2)
 

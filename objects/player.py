@@ -35,7 +35,7 @@ class Player(pygame.sprite.Sprite):
         self.invincible_duration = PLAYER_INVINCIBILITY_DURATION
         self.last_shot_time = 0
         self.shot_cooldown = PLAYER_SHOT_COOLDOWN
-        
+
         # Weapon boost properties
         self.weapon_boost_active = False
         self.weapon_boost_timer = 0
@@ -188,11 +188,13 @@ class Player(pygame.sprite.Sprite):
         self.weapon_boost_active = True
         self.weapon_boost_timer = pygame.time.get_ticks()
         self.weapon_boost_duration = duration
-        
+
         # Reduce shot cooldown (increase fire rate)
         self.shot_cooldown = int(self.base_shot_cooldown * (1 - POWERUP_WEAPON_BOOST_FACTOR))
-        logger.info(f"Weapon boost activated. Shot cooldown reduced to {self.shot_cooldown}ms for {duration}ms")
-    
+        logger.info(
+            f"Weapon boost activated. Shot cooldown reduced to {self.shot_cooldown}ms for {duration}ms"
+        )
+
     def deactivate_weapon_boost(self):
         """Deactivate weapon boost, restoring normal fire rate."""
         if self.weapon_boost_active:

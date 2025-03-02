@@ -59,19 +59,19 @@ class TestPowerup:
 
         powerup.deactivate()
         assert not powerup.active
-        
+
     def test_weapon_boost_powerup(self):
         """Test that a weapon boost powerup increases fire rate."""
         # Create player and powerup
         player = Player((100, 100))
         original_cooldown = player.shot_cooldown
-        
+
         # Create weapon boost powerup
         weapon_powerup = Powerup((100, 100), "weapon")
-        
+
         # Simulate collection
         weapon_powerup.apply_effect(player)
-        
+
         # Player should have increased fire rate (reduced cooldown)
         expected_cooldown = int(PLAYER_SHOT_COOLDOWN * (1 - POWERUP_WEAPON_BOOST_FACTOR))
         assert player.weapon_boost_active

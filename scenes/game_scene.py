@@ -29,7 +29,7 @@ class GameScene(Scene):
         super().__init__()
 
         logger.info("Initializing GameScene")
-        
+
         self._initialize_game()
 
     def _initialize_game(self):
@@ -55,7 +55,7 @@ class GameScene(Scene):
 
         # Initialize score manager
         self.score_manager = ScoreManager()
-        
+
         # Last time score was updated for time survived
         self.last_time_score_update = pygame.time.get_ticks()
 
@@ -64,7 +64,7 @@ class GameScene(Scene):
         self.time_survived = 0
         self.start_time = pygame.time.get_ticks()
         self.powerups_collected = 0
-        
+
         logger.info("Game state initialized/reinitialized")
 
     def reset(self):
@@ -135,7 +135,7 @@ class GameScene(Scene):
             # Update time survived
             current_time = pygame.time.get_ticks()
             self.time_survived = (current_time - self.start_time) // 1000
-            
+
             # Add points for time survived (every 5 seconds)
             if current_time - self.last_time_score_update >= 5000:  # 5 seconds
                 seconds_since_last_update = (current_time - self.last_time_score_update) // 1000
@@ -146,12 +146,12 @@ class GameScene(Scene):
             if self.player.current_health <= 0:
                 # Save high score before game over
                 self.score_manager.save_high_score()
-                
+
                 logger.info(
                     f"Game over. Score: {self.score_manager.current_score}, High Score: {self.score_manager.high_score}, "
                     f"Enemies killed: {self.enemies_killed}, Powerups: {self.powerups_collected}, Time survived: {self.time_survived}s"
                 )
-                
+
                 # Pass game stats to the game over scene
                 game_over_scene = self.scene_manager.scenes["game_over"]
                 game_over_scene.final_score = self.score_manager.current_score
@@ -159,7 +159,7 @@ class GameScene(Scene):
                 game_over_scene.enemies_killed = self.enemies_killed
                 game_over_scene.powerups_collected = self.powerups_collected
                 game_over_scene.time_survived = self.time_survived
-                
+
                 self.switch_to_scene("game_over")
 
     def check_collisions(self):
@@ -186,10 +186,10 @@ class GameScene(Scene):
                 handle_player_powerup_collision(self.player, powerup)
                 powerup.kill()  # Remove from all sprite groups
                 self.powerups_collected += 1
-                
+
                 # Update score
                 self.score_manager.powerup_collected()
-                
+
                 logger.info(
                     f"Powerup collected: {powerup.type}. Total collected: {self.powerups_collected}"
                 )
@@ -199,7 +199,7 @@ class GameScene(Scene):
         # Remove enemy
         enemy.kill()
         self.enemies_killed += 1
-        
+
         # Update score
         self.score_manager.enemy_defeated()
 
@@ -243,10 +243,12 @@ class GameScene(Scene):
             f"Powerups: {self.powerups_collected}", (255, 255, 255), SCREEN_WIDTH - 100, 50
         )
         self.draw_text(f"Time: {self.time_survived}s", (255, 255, 255), SCREEN_WIDTH - 100, 80)
-        
+
         # Draw score
         score_text = f"Score: {self.score_manager.get_formatted_score()}"
         high_score_text = f"High: {self.score_manager.get_formatted_high_score()}"
-        
+
         self.draw_text(score_text, (255, 255, 0), SCREEN_WIDTH // 2, 20)  # Yellow color for score
-        self.draw_text(high_score_text, (255, 165, 0), SCREEN_WIDTH // 2, 50)  # Orange color for high score
+        self.draw_text(
+            high_score_text, (255, 165, 0), SCREEN_WIDTH // 2, 50
+        )  # Orange color for high score
