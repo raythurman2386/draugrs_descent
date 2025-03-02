@@ -18,8 +18,8 @@ In Draugr's Descent, you control a hero fighting against waves of relentless ene
 
 ### Requirements
 
-- Python 3.x
-- Pygame 2.x
+- Python 3.13
+- Pygame 2.6.1
 
 ### Setup
 
@@ -82,8 +82,8 @@ The game is built using Python and Pygame with a structured object-oriented arch
 
 ## Credits
 
-Developed by: [Your Name]
+Ray Thurman - [@raythurman2386](https://github.com/raythurman2386)
 
 ## License
 
-[Specify Your License Here - e.g., MIT, GPL, etc.]
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

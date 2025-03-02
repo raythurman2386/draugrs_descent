@@ -21,9 +21,7 @@ def find_closest_enemy(player_pos, enemies):
 
     closest = min(
         enemies,
-        key=lambda e: math.hypot(
-            e.rect.centerx - player_pos[0], e.rect.centery - player_pos[1]
-        ),
+        key=lambda e: math.hypot(e.rect.centerx - player_pos[0], e.rect.centery - player_pos[1]),
     )
 
     logger.debug(

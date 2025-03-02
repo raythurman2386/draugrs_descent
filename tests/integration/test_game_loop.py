@@ -20,9 +20,7 @@ class TestGameLoop:
         assert len(game.enemies) >= 0
         assert len(game.powerups) >= 0
 
-    def test_game_state_transitions(
-        self, pygame_setup, mock_screen, mock_clock, mock_event
-    ):
+    def test_game_state_transitions(self, pygame_setup, mock_screen, mock_clock, mock_event):
         """Test that game states transition correctly."""
         game = GameStub(mock_screen, mock_clock)
 
@@ -66,9 +64,7 @@ class TestGameLoop:
         # There should be more enemies now
         assert len(game.enemies) > initial_enemy_count
 
-    def test_score_increases_on_enemy_death(
-        self, pygame_setup, mock_screen, mock_clock
-    ):
+    def test_score_increases_on_enemy_death(self, pygame_setup, mock_screen, mock_clock):
         """Test that score increases when an enemy is killed."""
         game = GameStub(mock_screen, mock_clock)
         game.state = GameState.PLAYING

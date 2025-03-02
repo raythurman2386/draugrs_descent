@@ -23,13 +23,9 @@ class GameOverScene(Scene):
         """Handle menu navigation and selection."""
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP:
-                self.selected_option = (self.selected_option - 1) % len(
-                    self.menu_options
-                )
+                self.selected_option = (self.selected_option - 1) % len(self.menu_options)
             elif event.key == pygame.K_DOWN:
-                self.selected_option = (self.selected_option + 1) % len(
-                    self.menu_options
-                )
+                self.selected_option = (self.selected_option + 1) % len(self.menu_options)
             elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
                 action = self.menu_options[self.selected_option]["action"]
                 if action == "exit":

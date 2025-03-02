@@ -24,9 +24,7 @@ class Projectile(pygame.sprite.Sprite):
         self.damage = damage if damage is not None else PROJECTILE_DAMAGE
         self.active = True  # Added active attribute
 
-        logger.debug(
-            f"Projectile {self.id} created at {position} with velocity {velocity}"
-        )
+        logger.debug(f"Projectile {self.id} created at {position} with velocity {velocity}")
 
     def update(self):
         # Move the projectile based on its velocity

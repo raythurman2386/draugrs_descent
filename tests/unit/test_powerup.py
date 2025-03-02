@@ -33,9 +33,7 @@ class TestPowerup:
 
         # Check if player health increased
         assert player.current_health > 50
-        assert (
-            not health_powerup.active
-        )  # Powerup should be deactivated after collection
+        assert not health_powerup.active  # Powerup should be deactivated after collection
 
     def test_shield_powerup(self):
         """Test that a shield powerup provides temporary invincibility."""

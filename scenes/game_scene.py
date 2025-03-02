@@ -125,9 +125,7 @@ class GameScene(Scene):
     def check_collisions(self):
         """Check and handle collisions between game objects."""
         # Projectiles vs Enemies
-        hits = pygame.sprite.groupcollide(
-            self.projectile_group, self.enemy_group, True, False
-        )
+        hits = pygame.sprite.groupcollide(self.projectile_group, self.enemy_group, True, False)
         for projectile, enemies in hits.items():
             for enemy in enemies:
                 # Use the enemy's take_damage method
@@ -138,9 +136,7 @@ class GameScene(Scene):
 
         # Player vs Enemies
         if not self.player.invincible:
-            enemy_collisions = pygame.sprite.spritecollide(
-                self.player, self.enemy_group, False
-            )
+            enemy_collisions = pygame.sprite.spritecollide(self.player, self.enemy_group, False)
             if enemy_collisions:
                 # Use the new take_damage method
                 if self.player.take_damage(10):
@@ -163,9 +159,5 @@ class GameScene(Scene):
         )  # Health
 
         # Draw game stats
-        self.draw_text(
-            f"Enemies: {self.enemies_killed}", (255, 255, 255), SCREEN_WIDTH - 100, 20
-        )
-        self.draw_text(
-            f"Time: {self.time_survived}s", (255, 255, 255), SCREEN_WIDTH - 100, 50
-        )
+        self.draw_text(f"Enemies: {self.enemies_killed}", (255, 255, 255), SCREEN_WIDTH - 100, 20)
+        self.draw_text(f"Time: {self.time_survived}s", (255, 255, 255), SCREEN_WIDTH - 100, 50)

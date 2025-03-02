@@ -43,9 +43,7 @@ class Powerup(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = position
 
-        logger.debug(
-            f"Powerup {self.id} of type {powerup_type} created at position {position}"
-        )
+        logger.debug(f"Powerup {self.id} of type {powerup_type} created at position {position}")
 
     def apply_effect(self, player):
         """Apply the powerup effect to the player.
