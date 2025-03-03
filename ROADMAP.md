@@ -17,8 +17,8 @@ This document outlines the planned development path for Draugr's Descent, organi
 - [ ] Add screen shake and visual feedback
 
 ### Audio
-- [ ] Add background music for different scenes
-- [ ] Implement sound effects for player actions, enemies, and collisions
+- [x] Add background music for different scenes
+- [x] Implement sound effects for player actions, enemies, and collisions
 - [ ] Create audio settings menu
 
 ### Technical Improvements
