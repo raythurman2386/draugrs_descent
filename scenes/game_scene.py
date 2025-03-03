@@ -32,6 +32,9 @@ class GameScene(Scene):
 
         self._initialize_game()
 
+        # Start the game music
+        self.play_scene_music("game")
+
     def _initialize_game(self):
         """Initialize or reinitialize all game objects and state."""
         # Create game object groups
@@ -71,6 +74,8 @@ class GameScene(Scene):
         """Reset the game scene to initial state when returning to this scene."""
         logger.info("Resetting GameScene")
         self._initialize_game()
+        # Restart the game music when resetting
+        self.play_scene_music("game")
 
     def spawn_enemy(self):
         """Spawn an enemy at a random screen edge."""
@@ -110,6 +115,10 @@ class GameScene(Scene):
             if event.key == pygame.K_ESCAPE:
                 logger.info("Game paused")
                 self.paused = True
+
+                # Stop the game music before switching to pause menu
+                self.sound_manager.stop_music()
+
                 self.switch_to_scene("pause")
             # Debug level toggles
             elif event.key == pygame.K_F1:
@@ -123,53 +132,104 @@ class GameScene(Scene):
                 logger.warning("Warning logging enabled")
 
     def update(self):
-        """Update game objects."""
-        if not self.paused:
-            self.player.update()
-            self.enemy_group.update(self.player.rect.center)
-            self.projectile_group.update()
-            self.powerup_group.update()
-            self.check_collisions()
+        """Update game state for the current frame."""
+        if self.paused:
+            return
+
+        # Get key presses
+        keys = pygame.key.get_pressed()
+        self._handle_input(keys)
+
+        # Spawn enemies on a timer
+        current_time = pygame.time.get_ticks()
+        if current_time - self.last_spawn_time > ENEMY_SPAWN_INTERVAL:
             self.spawn_enemy()
+            self.last_spawn_time = current_time
 
-            # Update time survived
-            current_time = pygame.time.get_ticks()
-            self.time_survived = (current_time - self.start_time) // 1000
+        # Check for collisions
+        self._handle_collisions()
 
-            # Add points for time survived (every 5 seconds)
-            if current_time - self.last_time_score_update >= 5000:  # 5 seconds
-                seconds_since_last_update = (current_time - self.last_time_score_update) // 1000
-                self.score_manager.add_time_survived_points(seconds_since_last_update)
-                self.last_time_score_update = current_time
+        # Update all sprites - enemy update needs player position
+        self.player.update()
+        self.enemy_group.update(self.player.rect.center)
+        self.projectile_group.update()
+        self.powerup_group.update()
 
-            # Check for game over
-            if self.player.current_health <= 0:
-                # Save high score before game over
-                self.score_manager.save_high_score()
+        # Check for dead enemies and create powerups
+        for enemy in self.enemy_group.copy():
+            if not enemy.alive():
+                self.enemies_killed += 1
+                self.score_manager.enemy_defeated()
 
-                logger.info(
-                    f"Game over. Score: {self.score_manager.current_score}, High Score: {self.score_manager.high_score}, "
-                    f"Enemies killed: {self.enemies_killed}, Powerups: {self.powerups_collected}, Time survived: {self.time_survived}s"
-                )
+                # Random chance to drop a powerup when an enemy is defeated
+                if random.random() < 0.25:  # 25% chance
+                    self.drop_powerup(enemy.rect.center)
 
-                # Pass game stats to the game over scene
-                game_over_scene = self.scene_manager.scenes["game_over"]
-                game_over_scene.final_score = self.score_manager.current_score
-                game_over_scene.high_score = self.score_manager.high_score
-                game_over_scene.enemies_killed = self.enemies_killed
-                game_over_scene.powerups_collected = self.powerups_collected
-                game_over_scene.time_survived = self.time_survived
+        # Clean up off-screen projectiles
+        for projectile in self.projectile_group.copy():
+            if (
+                projectile.rect.right < 0
+                or projectile.rect.left > SCREEN_WIDTH
+                or projectile.rect.bottom < 0
+                or projectile.rect.top > SCREEN_HEIGHT
+            ):
+                projectile.kill()
 
-                self.switch_to_scene("game_over")
+        # Update time survived
+        self.time_survived = (current_time - self.start_time) // 1000
 
-    def check_collisions(self):
-        """Check and handle collisions between game objects."""
+        # Add points for time survived (every 5 seconds)
+        if current_time - self.last_time_score_update >= 5000:  # 5 seconds
+            seconds_since_last_update = (current_time - self.last_time_score_update) // 1000
+            self.score_manager.add_time_survived_points(seconds_since_last_update)
+            self.last_time_score_update = current_time
+
+        # Check for game over
+        if self.player.current_health <= 0:
+            # Save high score before game over
+            self.score_manager.save_high_score()
+
+            logger.info(
+                f"Game over. Score: {self.score_manager.current_score}, High Score: {self.score_manager.high_score}, "
+                f"Enemies killed: {self.enemies_killed}, Powerups: {self.powerups_collected}, Time survived: {self.time_survived}s"
+            )
+
+            # Pass game stats to the game over scene
+            game_over_scene = self.scene_manager.scenes["game_over"]
+            game_over_scene.final_score = self.score_manager.current_score
+            game_over_scene.high_score = self.score_manager.high_score
+            game_over_scene.enemies_killed = self.enemies_killed
+            game_over_scene.powerups_collected = self.powerups_collected
+            game_over_scene.time_survived = self.time_survived
+
+            self.switch_to_scene("game_over")
+
+    def _handle_input(self, keys):
+        """Handle player input that isn't already handled in Player.update()"""
+        # Player movement and shooting is handled in Player.update()
+
+        # If arrow keys are pressed (player is moving) and space is pressed (firing),
+        # occasionally play sound
+        player_moving = (
+            keys[pygame.K_LEFT] or keys[pygame.K_RIGHT] or keys[pygame.K_UP] or keys[pygame.K_DOWN]
+        )
+
+        if (
+            player_moving
+            and pygame.time.get_ticks() - self.player.last_shot_time > self.player.shot_cooldown
+        ):
+            if random.random() < 0.3:  # Don't play on every shot to avoid sound overload
+                self.play_sound("player_hit")
+
+    def _handle_collisions(self):
+        """Check for and handle all collisions."""
         # Projectiles vs Enemies
         hits = pygame.sprite.groupcollide(self.projectile_group, self.enemy_group, True, False)
         for projectile, enemies in hits.items():
             for enemy in enemies:
                 # Use the enemy's take_damage method
                 if enemy.take_damage(projectile.damage):
+                    self.play_sound("enemy_hit")
                     self.handle_enemy_death(enemy)
                     logger.debug(f"Enemy killed. Total killed: {self.enemies_killed}")
 
@@ -178,11 +238,20 @@ class GameScene(Scene):
             enemy_collisions = pygame.sprite.spritecollide(self.player, self.enemy_group, False)
             for enemy in enemy_collisions:
                 handle_player_enemy_collision(self.player, enemy)
+                self.play_sound("player_hit")
+
+                # Check if player died from this collision
+                if self.player.current_health <= 0:
+                    self.play_sound("game_lost")
 
         # Player vs Powerups
         powerup_collisions = pygame.sprite.spritecollide(self.player, self.powerup_group, False)
         for powerup in powerup_collisions:
             if powerup.active:
+                # Play powerup collection sound
+                self.play_sound("powerup_collect")
+
+                # Apply powerup effect
                 handle_player_powerup_collision(self.player, powerup)
                 powerup.kill()  # Remove from all sprite groups
                 self.powerups_collected += 1
@@ -237,14 +306,34 @@ class GameScene(Scene):
             (10, 10, HEALTH_BAR_WIDTH * health_ratio, HEALTH_BAR_HEIGHT),
         )  # Health
 
-        # Draw game stats
-        self.draw_text(f"Enemies: {self.enemies_killed}", (255, 255, 255), SCREEN_WIDTH - 100, 20)
-        self.draw_text(
-            f"Powerups: {self.powerups_collected}", (255, 255, 255), SCREEN_WIDTH - 100, 50
-        )
-        self.draw_text(f"Time: {self.time_survived}s", (255, 255, 255), SCREEN_WIDTH - 100, 80)
+        # Use small font for side UI elements to avoid cutoff
+        ui_font = self.small_font if hasattr(self, "small_font") else self.font
 
-        # Draw score
+        # Right-aligned game stats - moved further from the edge
+        right_margin = 140  # Increased from 100 to give more space
+        self.draw_text(
+            f"Enemies: {self.enemies_killed}",
+            (255, 255, 255),
+            SCREEN_WIDTH - right_margin,
+            20,
+            ui_font,
+        )
+        self.draw_text(
+            f"Powerups: {self.powerups_collected}",
+            (255, 255, 255),
+            SCREEN_WIDTH - right_margin,
+            50,
+            ui_font,
+        )
+        self.draw_text(
+            f"Time: {self.time_survived}s",
+            (255, 255, 255),
+            SCREEN_WIDTH - right_margin,
+            80,
+            ui_font,
+        )
+
+        # Draw score - centered
         score_text = f"Score: {self.score_manager.get_formatted_score()}"
         high_score_text = f"High: {self.score_manager.get_formatted_high_score()}"
 
@@ -252,3 +341,12 @@ class GameScene(Scene):
         self.draw_text(
             high_score_text, (255, 165, 0), SCREEN_WIDTH // 2, 50
         )  # Orange color for high score
+
+    def resume_from_pause(self):
+        """Resume the game after returning from pause menu."""
+        self.paused = False
+
+        # Play game music again (since we might have stopped it when pausing)
+        self.play_scene_music("game")
+
+        logger.info("Game resumed from pause")

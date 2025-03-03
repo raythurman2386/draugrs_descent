@@ -18,14 +18,20 @@ class MainMenuScene(Scene):
         ]
         self.selected_option = 0
 
+        # Start playing main menu music
+        self.play_scene_music("main_menu")
+
     def handle_event(self, event):
         """Handle menu navigation and selection."""
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP:
                 self.selected_option = (self.selected_option - 1) % len(self.menu_options)
+                self.play_sound("menu_navigate")
             elif event.key == pygame.K_DOWN:
                 self.selected_option = (self.selected_option + 1) % len(self.menu_options)
+                self.play_sound("menu_navigate")
             elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
+                self.play_sound("button_click")
                 action = self.menu_options[self.selected_option]["action"]
                 if action == "exit":
                     self.done = True

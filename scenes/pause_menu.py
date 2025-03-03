@@ -23,25 +23,37 @@ class PauseMenuScene(Scene):
         self.overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
         self.overlay.fill((0, 0, 0, 128))  # Black with 50% opacity
 
+        # Start playing pause menu music
+        self.play_scene_music("pause")
+
     def handle_event(self, event):
         """Handle menu navigation and selection."""
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP:
                 self.selected_option = (self.selected_option - 1) % len(self.menu_options)
+                self.play_sound("menu_navigate")
             elif event.key == pygame.K_DOWN:
                 self.selected_option = (self.selected_option + 1) % len(self.menu_options)
+                self.play_sound("menu_navigate")
             elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
+                self.play_sound("button_click")
                 action = self.menu_options[self.selected_option]["action"]
                 if action == "exit":
                     self.done = True
                 elif action == "game":
+                    # Stop the pause music before resuming the game
+                    self.sound_manager.stop_music()
+
                     # Just unpause the game to resume
                     if self.scene_manager:
                         game_scene = self.scene_manager.scenes.get("game")
                         if game_scene:
-                            game_scene.paused = False
+                            game_scene.resume_from_pause()
                     self.switch_to_scene(action)
                 elif action == "main_menu":
+                    # Stop the pause music before going to the main menu
+                    self.sound_manager.stop_music()
+
                     # If returning to main menu, reset the game state for later
                     if self.scene_manager:
                         game_scene = self.scene_manager.scenes.get("game")
@@ -52,11 +64,16 @@ class PauseMenuScene(Scene):
                     self.switch_to_scene(action)
             elif event.key == pygame.K_ESCAPE:
                 # Pressing escape again returns to game
+                self.play_sound("button_click")
+
+                # Stop the pause music before resuming the game
+                self.sound_manager.stop_music()
+
                 # Just unpause the game to resume
                 if self.scene_manager:
                     game_scene = self.scene_manager.scenes.get("game")
                     if game_scene:
-                        game_scene.paused = False
+                        game_scene.resume_from_pause()
                 self.switch_to_scene("game")
 
     def update(self):
