@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Projectile issues where projectiles weren't appearing on screen
 
-## [0.1.0] - YYYY-MM-DD
+## [0.1.0] - 2025-03-02
 
 ### Added
 - Initial project setup
@@ -36,3 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Player character with movement
 - Simple enemies
 - Initial collision detection 
+- Unit and Integration tests
+- Global Sound Manager for all sound states
+- Initial assets including scene music and some menu and other sound effects
+- Fonts and other assets from [KennyNL](https://kenney.nl/)
