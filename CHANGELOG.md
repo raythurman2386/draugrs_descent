@@ -21,9 +21,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub workflows for code formatting and testing
 - Issue and PR templates
 - Contributing guidelines
+- Asset Manager for improved resource management
+- Options Menu for audio settings (music and sound effects volume)
+- Different enemy types with unique behaviors (chargers, ranged attackers)
 
 ### Changed
 - Refactored monolithic game class into scene-based architecture
+- Standardized font usage across all scenes using Asset Manager
+- Improved configuration access for screen dimensions and colors
 
 ### Fixed
 - Projectile issues where projectiles weren't appearing on screen

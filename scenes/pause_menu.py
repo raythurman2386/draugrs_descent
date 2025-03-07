@@ -8,12 +8,11 @@ class PauseMenuScene(Scene):
 
     def __init__(self):
         super().__init__()
-        self.title_font = pygame.font.SysFont("Arial", 48)
-        self.button_font = pygame.font.SysFont("Arial", 36)
 
         # Menu options
         self.menu_options = [
             {"text": "Resume", "action": "game"},
+            {"text": "Options", "action": "options"},
             {"text": "Main Menu", "action": "main_menu"},
             {"text": "Exit", "action": "exit"},
         ]
@@ -64,6 +63,13 @@ class PauseMenuScene(Scene):
                         if game_scene:
                             game_scene.reset()
                     self.switch_to_scene(action)
+                elif action == "options":
+                    # Set the previous scene to return to pause menu
+                    if self.scene_manager:
+                        options_scene = self.scene_manager.scenes.get("options")
+                        if options_scene:
+                            options_scene.set_previous_scene("pause")
+                    self.switch_to_scene(action)
                 else:
                     self.switch_to_scene(action)
             elif event.key == pygame.K_ESCAPE:
@@ -103,8 +109,12 @@ class PauseMenuScene(Scene):
 
         # Draw menu options
         for i, option in enumerate(self.menu_options):
-            color = (255, 255, 0) if i == self.selected_option else config.get_color("white")
-            text = self.button_font.render(option["text"], True, color)
+            color = (
+                config.get_color("yellow")
+                if i == self.selected_option
+                else config.get_color("white")
+            )
+            text = self.font.render(option["text"], True, color)
             position = (screen_width // 2, screen_height // 2 + i * 60)
             text_rect = text.get_rect(center=position)
             self.screen.blit(text, text_rect)

@@ -8,9 +8,6 @@ class GameOverScene(Scene):
 
     def __init__(self):
         super().__init__()
-        self.title_font = pygame.font.SysFont("Arial", 64)
-        self.stats_font = pygame.font.SysFont("Arial", 28)
-        self.button_font = pygame.font.SysFont("Arial", 36)
 
         # Game stats to display
         self.final_score = 0
@@ -75,28 +72,43 @@ class GameOverScene(Scene):
 
     def render(self):
         """Render the game over screen."""
-        self.screen.fill(config.BLACK)
+        self.screen.fill(config.get_color("black"))
 
         # Draw title
-        title = self.title_font.render("GAME OVER", True, config.RED)
-        title_rect = title.get_rect(center=(config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 6))
+        title = self.title_font.render("GAME OVER", True, config.get_color("red"))
+        title_rect = title.get_rect(
+            center=(
+                config.get("screen", "width", default=800) // 2,
+                config.get("screen", "height", default=600) // 6,
+            )
+        )
         self.screen.blit(title, title_rect)
 
         # Draw score and stats
-        y_position = config.SCREEN_HEIGHT // 3
+        y_position = config.get("screen", "height", default=600) // 3
 
         # Score display
-        score_text = self.stats_font.render(f"SCORE: {self.final_score:,}", True, config.YELLOW)
-        score_rect = score_text.get_rect(center=(config.SCREEN_WIDTH // 2, y_position))
+        score_text = self.small_font.render(
+            f"SCORE: {self.final_score:,}", True, config.get_color("yellow")
+        )
+        score_rect = score_text.get_rect(
+            center=(config.get("screen", "width", default=800) // 2, y_position)
+        )
         self.screen.blit(score_text, score_rect)
 
         # High score display
         y_position += 40
-        high_score_color = config.YELLOW if self.final_score >= self.high_score else config.ORANGE
-        high_score_text = self.stats_font.render(
+        high_score_color = (
+            config.get_color("yellow")
+            if self.final_score >= self.high_score
+            else config.get_color("orange")
+        )
+        high_score_text = self.small_font.render(
             f"HIGH SCORE: {self.high_score:,}", True, high_score_color
         )
-        high_score_rect = high_score_text.get_rect(center=(config.SCREEN_WIDTH // 2, y_position))
+        high_score_rect = high_score_text.get_rect(
+            center=(config.get("screen", "width", default=800) // 2, y_position)
+        )
         self.screen.blit(high_score_text, high_score_rect)
 
         # Stats display
@@ -108,18 +120,26 @@ class GameOverScene(Scene):
         ]
 
         for stat in stats:
-            stat_text = self.stats_font.render(stat, True, config.WHITE)
-            stat_rect = stat_text.get_rect(center=(config.SCREEN_WIDTH // 2, y_position))
+            stat_text = self.small_font.render(stat, True, config.get_color("white"))
+            stat_rect = stat_text.get_rect(
+                center=(config.get("screen", "width", default=800) // 2, y_position)
+            )
             self.screen.blit(stat_text, stat_rect)
             y_position += 30
 
         # Draw menu options
-        y_position = config.SCREEN_HEIGHT - 180  # Start menu options lower on the screen
+        y_position = (
+            config.get("screen", "height", default=600) - 180
+        )  # Start menu options lower on the screen
 
         for i, option in enumerate(self.menu_options):
-            color = (255, 255, 0) if i == self.selected_option else config.WHITE
-            text = self.button_font.render(option["text"], True, color)
-            position = (config.SCREEN_WIDTH // 2, y_position + i * 50)
+            color = (
+                config.get_color("yellow")
+                if i == self.selected_option
+                else config.get_color("white")
+            )
+            text = self.font.render(option["text"], True, color)
+            position = (config.get("screen", "width", default=800) // 2, y_position + i * 50)
             text_rect = text.get_rect(center=position)
             self.screen.blit(text, text_rect)
 

@@ -3,6 +3,7 @@ from .game_state_manager import GameStateManager, game_state
 from .sound_manager import SoundManager, game_sound_manager
 from .score_manager import ScoreManager
 from .config_manager import config
+from .asset_manager import AssetManager, game_asset_manager
 
 
 __all__ = [
@@ -12,5 +13,7 @@ __all__ = [
     "ScoreManager",
     "SoundManager",
     "game_sound_manager",
+    "AssetManager",
+    "game_asset_manager",
     "config",
 ]

@@ -1,12 +1,6 @@
 import pygame
-import os
 from managers.sound_manager import game_sound_manager
-
-# Font file paths
-FONT_PATH = "assets/fonts"
-DEFAULT_FONT = os.path.join(FONT_PATH, "kenney_future.ttf")
-NARROW_FONT = os.path.join(FONT_PATH, "kenney_future_narrow.ttf")
-SQUARE_FONT = os.path.join(FONT_PATH, "kenney_future_square.ttf")
+from managers.asset_manager import game_asset_manager
 
 
 class Scene:
@@ -19,34 +13,20 @@ class Scene:
         self.clock = pygame.time.Clock()
         self.scene_manager = None  # Will be set by SceneManager
         self.sound_manager = game_sound_manager
+        self.asset_manager = game_asset_manager
 
-        # Load custom fonts
-        self._load_fonts()
+        # Set up fonts using the asset manager
+        self._setup_fonts()
 
-    def _load_fonts(self):
-        """Load custom fonts for the scene."""
-        try:
-            # Default system font fallback
-            self.font = pygame.font.SysFont("Arial", 32)
-
-            # Try to load custom fonts if they exist
-            if os.path.exists(DEFAULT_FONT):
-                self.title_font = pygame.font.Font(DEFAULT_FONT, 64)
-                self.font = pygame.font.Font(DEFAULT_FONT, 32)
-                self.small_font = pygame.font.Font(DEFAULT_FONT, 24)
-
-            if os.path.exists(NARROW_FONT):
-                self.narrow_font = pygame.font.Font(NARROW_FONT, 32)
-
-            if os.path.exists(SQUARE_FONT):
-                self.ui_font = pygame.font.Font(SQUARE_FONT, 28)
-        except Exception as e:
-            print(f"Error loading fonts: {e}")
-            # Fallback to system fonts if custom fonts fail
-            self.title_font = pygame.font.SysFont("Arial", 64)
-            self.small_font = pygame.font.SysFont("Arial", 24)
-            self.narrow_font = pygame.font.SysFont("Arial", 32)
-            self.ui_font = pygame.font.SysFont("Arial", 28)
+    def _setup_fonts(self):
+        """Set up fonts for the scene using the asset manager."""
+        # Get fonts from asset manager
+        self.title_font = self.asset_manager.get_font("default", "title")
+        self.heading_font = self.asset_manager.get_font("default", "heading")
+        self.font = self.asset_manager.get_font("default", "normal")
+        self.ui_font = self.asset_manager.get_font("square", "ui")
+        self.small_font = self.asset_manager.get_font("default", "small")
+        self.narrow_font = self.asset_manager.get_font("narrow", "normal")
 
     def process_events(self, events):
         """Process all events."""

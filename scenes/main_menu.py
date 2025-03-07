@@ -8,12 +8,11 @@ class MainMenuScene(Scene):
 
     def __init__(self):
         super().__init__()
-        self.title_font = pygame.font.SysFont("Arial", 64)
-        self.button_font = pygame.font.SysFont("Arial", 36)
 
         # Menu options
         self.menu_options = [
             {"text": "Start Game", "action": "game"},
+            {"text": "Options", "action": "options"},
             {"text": "Exit", "action": "exit"},
         ]
         self.selected_option = 0
@@ -44,6 +43,11 @@ class MainMenuScene(Scene):
                             game_scene.reset()
                             # Ensure the game isn't paused
                             game_scene.paused = False
+                    elif action == "options" and self.scene_manager:
+                        # Set the previous scene to return to main menu
+                        options_scene = self.scene_manager.scenes.get("options")
+                        if options_scene:
+                            options_scene.set_previous_scene("main_menu")
                     self.switch_to_scene(action)
 
     def update(self):
@@ -65,8 +69,12 @@ class MainMenuScene(Scene):
 
         # Draw menu options
         for i, option in enumerate(self.menu_options):
-            color = (255, 255, 0) if i == self.selected_option else config.get_color("white")
-            text = self.button_font.render(option["text"], True, color)
+            color = (
+                config.get_color("yellow")
+                if i == self.selected_option
+                else config.get_color("white")
+            )
+            text = self.font.render(option["text"], True, color)
             position = (screen_width // 2, screen_height // 2 + i * 60)
             text_rect = text.get_rect(center=position)
             self.screen.blit(text, text_rect)
