@@ -11,6 +11,9 @@ colors:
   red: [255, 0, 0]
   green: [0, 255, 0]
   white: [255, 255, 255]
+  blue: [0, 0, 255]
+  yellow: [255, 255, 0]
+  purple: [255, 0, 255]
 
 # Game Mechanics
 mechanics:
@@ -44,6 +47,27 @@ enemy:
   attributes:
     max_health: 20
     damage: 10
+    speed: 2
+  # New enemy type settings
+  ranged:
+    preferred_distance: 200
+    attack_cooldown: 2000  # milliseconds
+    projectile_speed: 5
+    projectile_damage: 5
+    speed: 1.5
+    max_health: 15
+  charger:
+    charge_distance: 150
+    charge_cooldown: 3000  # milliseconds
+    charge_duration: 1000  # milliseconds
+    charge_speed_multiplier: 3
+    speed: 1.8
+    max_health: 50
+  # Spawn weights for different enemy types (out of 100)
+  spawn_weights:
+    basic: 60
+    ranged: 20
+    charger: 20
 
 # Projectile Settings
 projectile:
@@ -77,6 +101,13 @@ powerups:
     speed: [255, 255, 0]
     weapon: [255, 165, 0]
 
+# Scoring
+scoring:
+  basic_enemy: 10
+  ranged_enemy: 20
+  charger_enemy: 30
+  powerup_collected: 5
+
 # Asset Paths
 assets:
   images:
@@ -96,4 +127,4 @@ assets:
     powerup: "powerup.wav"
   fonts:
     path: "assets/fonts"
-    main: "main_font.ttf" 
+    main: "main_font.ttf"

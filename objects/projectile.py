@@ -10,7 +10,7 @@ class Projectile(pygame.sprite.Sprite):
     # Counter for unique projectile IDs
     next_id = 1
 
-    def __init__(self, position, velocity, damage=None):
+    def __init__(self, position, velocity, damage=None, is_enemy_projectile=False):
         super().__init__()
         # Assign a unique ID to each projectile
         self.id = Projectile.next_id
@@ -21,11 +21,18 @@ class Projectile(pygame.sprite.Sprite):
         height = config.get("projectile", "dimensions", "height", default=10)
 
         self.image = pygame.Surface((width, height))
-        self.image.fill(config.get_color("white"))
+
+        # Set color based on whether it's an enemy projectile or player projectile
+        if is_enemy_projectile:
+            self.image.fill(config.get_color("red"))
+        else:
+            self.image.fill(config.get_color("white"))
+
         self.rect = self.image.get_rect()
         self.rect.center = position
         self.position = list(position)
         self.velocity = velocity
+        self.is_enemy_projectile = is_enemy_projectile
 
         # Get damage from config if not provided
         self.damage = (
@@ -35,7 +42,9 @@ class Projectile(pygame.sprite.Sprite):
         )
 
         self.active = True
-        logger.debug(f"Projectile {self.id} created at {position} with velocity {velocity}")
+        logger.debug(
+            f"Projectile {self.id} created at {position} with velocity {velocity} (enemy: {is_enemy_projectile})"
+        )
 
     def update(self):
         """Update the projectile position based on velocity."""

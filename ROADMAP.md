@@ -5,7 +5,7 @@ This document outlines the planned development path for Draugr's Descent, organi
 ## Short-term Goals (1-2 months)
 
 ### Gameplay Improvements
-- [ ] Add different enemy types with unique behaviors (chargers, ranged attackers, etc.)
+- [x] Add different enemy types with unique behaviors (chargers, ranged attackers, etc.)
 - [ ] Implement player character upgrades (increased health, speed, fire rate)
 - [x] Create a basic item/power-up system (health pack, shield, weapon boost)
 - [x] Add a scoring system with high scores table
