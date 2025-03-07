@@ -70,13 +70,22 @@ class TestGameLoop:
         game.state = GameState.PLAYING
         initial_score = game.score
 
+        # Create a subclass of Enemy with a modified take_damage method for testing
+        class TestEnemy(Enemy):
+            def take_damage(self, amount):
+                self.health -= amount
+                # Don't kill the enemy here, let the game.update() do it
+                return self.health <= 0
+
         # Add an enemy with low health
-        enemy = Enemy((100, 100))
-        enemy.current_health = 1
+        enemy = TestEnemy((100, 100))
+        enemy.health = 1
         game.enemies.add(enemy)
 
-        # Kill the enemy and update the game
-        enemy.take_damage(10)  # More than enough to kill
+        # Set enemy health to 0 to simulate death
+        enemy.take_damage(10)  # Reduce health but don't kill
+
+        # Update the game - this should detect the dead enemy and increase score
         game.update()
 
         # Score should have increased

@@ -3,7 +3,7 @@
 import pytest
 import pygame
 from objects import Powerup, Player
-from constants import PLAYER_SHOT_COOLDOWN, POWERUP_WEAPON_BOOST_FACTOR
+from managers import config
 
 
 class TestPowerup:
@@ -73,7 +73,11 @@ class TestPowerup:
         weapon_powerup.apply_effect(player)
 
         # Player should have increased fire rate (reduced cooldown)
-        expected_cooldown = int(PLAYER_SHOT_COOLDOWN * (1 - POWERUP_WEAPON_BOOST_FACTOR))
+        player_shot_cooldown = config.get("player", "attributes", "shot_cooldown", default=500)
+        weapon_boost_factor = config.get(
+            "powerups", "effects", "weapon_boost", "factor", default=0.5
+        )
+        expected_cooldown = int(player_shot_cooldown * (1 - weapon_boost_factor))
         assert player.weapon_boost_active
         assert player.shot_cooldown == expected_cooldown
         assert not weapon_powerup.active  # Powerup should be deactivated

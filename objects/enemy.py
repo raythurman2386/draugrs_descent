@@ -1,5 +1,5 @@
 import pygame
-from constants import ENEMY_WIDTH, ENEMY_HEIGHT, RED, ENEMY_MAX_HEALTH, ENEMY_DAMAGE
+from managers import config
 from utils.logger import GameLogger
 
 # Get a logger for the enemy module
@@ -16,37 +16,69 @@ class Enemy(pygame.sprite.Sprite):
         self.id = Enemy.next_id
         Enemy.next_id += 1
 
-        self.image = pygame.Surface((ENEMY_WIDTH, ENEMY_HEIGHT))
-        self.image.fill(RED)
+        # Get enemy dimensions from config
+        width = config.get("enemy", "dimensions", "width", default=30)
+        height = config.get("enemy", "dimensions", "height", default=30)
+
+        self.image = pygame.Surface((width, height))
+        self.image.fill(config.get_color("red"))
         self.rect = self.image.get_rect()
         self.rect.center = position
-        self.max_health = ENEMY_MAX_HEALTH
-        self.current_health = ENEMY_MAX_HEALTH
-        self.damage = ENEMY_DAMAGE
+        self.position = list(position)  # For precise positioning
 
-        logger.debug(f"Enemy {self.id} created at position {position}")
+        # Get enemy attributes from config
+        self.max_health = config.get("enemy", "attributes", "max_health", default=30)
+        self.health = self.max_health
+        self.damage = config.get("enemy", "attributes", "damage", default=10)
+        self.speed = config.get("enemy", "attributes", "speed", default=2)
 
-    def update(self, player_position):
-        # Simple enemy movement towards the player
-        if player_position:
-            dx = player_position[0] - self.rect.centerx
-            dy = player_position[1] - self.rect.centery
-            distance = (dx**2 + dy**2) ** 0.5
+        logger.debug(f"Enemy {self.id} created at {position}")
 
-            # Move towards the player if not too close
-            if distance > 0:
-                speed = 2  # Adjust as needed
-                self.rect.x += dx / distance * speed
-                self.rect.y += dy / distance * speed
+    def move_towards(self, target_position):
+        """Move the enemy towards the target position."""
+        # Calculate direction vector
+        dx = target_position[0] - self.position[0]
+        dy = target_position[1] - self.position[1]
+
+        # Normalize the direction
+        distance = max(1, (dx**2 + dy**2) ** 0.5)  # Avoid division by zero
+        dx = dx / distance
+        dy = dy / distance
+
+        # Move in the normalized direction
+        self.position[0] += dx * self.speed
+        self.position[1] += dy * self.speed
+
+        # Update rect position
+        self.rect.center = (int(self.position[0]), int(self.position[1]))
 
     def take_damage(self, amount):
-        """Handle enemy taking damage with appropriate logging."""
-        self.current_health -= amount
+        """
+        Apply damage to the enemy.
+
+        Args:
+            amount: Amount of damage to apply
+
+        Returns:
+            bool: True if the enemy died, False otherwise
+        """
+        self.health -= amount
         logger.debug(
-            f"Enemy {self.id} took {amount} damage. Health: {self.current_health}/{self.max_health}"
+            f"Enemy {self.id} took {amount} damage. Health: {self.health}/{self.max_health}"
         )
 
-        if self.current_health <= 0:
-            logger.info(f"Enemy {self.id} was defeated")
+        if self.health <= 0:
+            self.kill()
+            logger.debug(f"Enemy {self.id} died")
             return True
         return False
+
+    def update(self, player_position=None):
+        """
+        Update enemy state.
+
+        Args:
+            player_position: Optional position to move towards
+        """
+        if player_position:
+            self.move_towards(player_position)

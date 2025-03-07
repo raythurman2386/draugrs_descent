@@ -1,0 +1,99 @@
+# Screen Configuration
+screen:
+  width: 800
+  height: 600
+  caption: "Draugr's Descent"
+  frame_rate: 60
+
+# Colors (RGB)
+colors:
+  black: [0, 0, 0]
+  red: [255, 0, 0]
+  green: [0, 255, 0]
+  white: [255, 255, 255]
+
+# Game Mechanics
+mechanics:
+  enemy_spawn:
+    interval: 1000  # milliseconds
+    edges:
+      top: [0, -30]
+      bottom: [0, 630]
+      left: [-30, 0]
+      right: [830, 0]
+
+# Player Settings
+player:
+  dimensions:
+    width: 50
+    height: 50
+  start_position:
+    x: 400
+    y: 300
+  attributes:
+    max_health: 100
+    movement_speed: 5
+    shot_cooldown: 500  # milliseconds
+    invincibility_duration: 1000  # milliseconds
+
+# Enemy Settings
+enemy:
+  dimensions:
+    width: 30
+    height: 30
+  attributes:
+    max_health: 20
+    damage: 10
+
+# Projectile Settings
+projectile:
+  dimensions:
+    width: 10
+    height: 10
+  attributes:
+    damage: 10
+
+# UI Elements
+ui:
+  health_bar:
+    width: 200
+    height: 20
+
+# Powerup Settings
+powerups:
+  dimensions:
+    width: 25
+    height: 25
+  effects:
+    health_restore: 25
+    shield_duration: 5000  # milliseconds
+    speed_boost: 2
+    speed_duration: 5000  # milliseconds
+    weapon_boost: 0.5
+    weapon_duration: 5000  # milliseconds
+  colors:
+    health: [0, 255, 0]
+    shield: [0, 0, 255]
+    speed: [255, 255, 0]
+    weapon: [255, 165, 0]
+
+# Asset Paths
+assets:
+  images:
+    path: "assets/images"
+    player: "player.png"
+    enemy: "enemy.png"
+    projectile: "projectile.png"
+    powerups:
+      health: "powerup_health.png"
+      shield: "powerup_shield.png"
+      speed: "powerup_speed.png"
+  sounds:
+    path: "assets/sounds"
+    background_music: "background.mp3"
+    shoot: "shoot.wav"
+    hit: "hit.wav"
+    powerup: "powerup.wav"
+  fonts:
+    path: "assets/fonts"
+    main: "main_font.ttf" 

@@ -68,11 +68,11 @@ class GameStub:
             self.projectiles.update()
             self.powerups.update()
 
-            # Check for collisions with enemies that died
-            for enemy in list(self.enemies):
-                if enemy.current_health <= 0:
-                    enemy.kill()
-                    self.score += 10
+            # Check for collisions with enemies that died - Important: Process all enemies
+            dead_enemies = [enemy for enemy in self.enemies if enemy.health <= 0]
+            for enemy in dead_enemies:
+                enemy.kill()
+                self.score += 100  # Increase score by 100 points when enemy dies
 
     def reset_game(self):
         self.player = Player()

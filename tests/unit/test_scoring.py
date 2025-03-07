@@ -3,7 +3,7 @@ import pygame
 import json
 import os
 from unittest.mock import patch, mock_open
-from utils.scoring import ScoreManager
+from managers.score_manager import ScoreManager
 
 
 class TestScoreManager:

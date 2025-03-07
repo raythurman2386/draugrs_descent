@@ -1,6 +1,6 @@
 import pygame
 from .scene import Scene
-from constants import SCREEN_WIDTH, SCREEN_HEIGHT, BLACK, WHITE, RED, YELLOW, ORANGE
+from managers import config
 
 
 class GameOverScene(Scene):
@@ -75,28 +75,28 @@ class GameOverScene(Scene):
 
     def render(self):
         """Render the game over screen."""
-        self.screen.fill(BLACK)
+        self.screen.fill(config.BLACK)
 
         # Draw title
-        title = self.title_font.render("GAME OVER", True, RED)
-        title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 6))
+        title = self.title_font.render("GAME OVER", True, config.RED)
+        title_rect = title.get_rect(center=(config.SCREEN_WIDTH // 2, config.SCREEN_HEIGHT // 6))
         self.screen.blit(title, title_rect)
 
         # Draw score and stats
-        y_position = SCREEN_HEIGHT // 3
+        y_position = config.SCREEN_HEIGHT // 3
 
         # Score display
-        score_text = self.stats_font.render(f"SCORE: {self.final_score:,}", True, YELLOW)
-        score_rect = score_text.get_rect(center=(SCREEN_WIDTH // 2, y_position))
+        score_text = self.stats_font.render(f"SCORE: {self.final_score:,}", True, config.YELLOW)
+        score_rect = score_text.get_rect(center=(config.SCREEN_WIDTH // 2, y_position))
         self.screen.blit(score_text, score_rect)
 
         # High score display
         y_position += 40
-        high_score_color = YELLOW if self.final_score >= self.high_score else ORANGE
+        high_score_color = config.YELLOW if self.final_score >= self.high_score else config.ORANGE
         high_score_text = self.stats_font.render(
             f"HIGH SCORE: {self.high_score:,}", True, high_score_color
         )
-        high_score_rect = high_score_text.get_rect(center=(SCREEN_WIDTH // 2, y_position))
+        high_score_rect = high_score_text.get_rect(center=(config.SCREEN_WIDTH // 2, y_position))
         self.screen.blit(high_score_text, high_score_rect)
 
         # Stats display
@@ -108,18 +108,18 @@ class GameOverScene(Scene):
         ]
 
         for stat in stats:
-            stat_text = self.stats_font.render(stat, True, WHITE)
-            stat_rect = stat_text.get_rect(center=(SCREEN_WIDTH // 2, y_position))
+            stat_text = self.stats_font.render(stat, True, config.WHITE)
+            stat_rect = stat_text.get_rect(center=(config.SCREEN_WIDTH // 2, y_position))
             self.screen.blit(stat_text, stat_rect)
             y_position += 30
 
         # Draw menu options
-        y_position = SCREEN_HEIGHT - 180  # Start menu options lower on the screen
+        y_position = config.SCREEN_HEIGHT - 180  # Start menu options lower on the screen
 
         for i, option in enumerate(self.menu_options):
-            color = (255, 255, 0) if i == self.selected_option else WHITE
+            color = (255, 255, 0) if i == self.selected_option else config.WHITE
             text = self.button_font.render(option["text"], True, color)
-            position = (SCREEN_WIDTH // 2, y_position + i * 50)
+            position = (config.SCREEN_WIDTH // 2, y_position + i * 50)
             text_rect = text.get_rect(center=position)
             self.screen.blit(text, text_rect)
 

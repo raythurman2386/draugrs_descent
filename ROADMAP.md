@@ -23,7 +23,7 @@ This document outlines the planned development path for Draugr's Descent, organi
 
 ### Technical Improvements
 - [ ] Optimize collision detection for improved performance
-- [ ] Add configuration file for game settings
+- [x] Add configuration file for game settings
 - [ ] Create a proper installation package
 
 ## Mid-term Goals (3-6 months)

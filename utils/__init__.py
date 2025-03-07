@@ -1,5 +1,6 @@
 from .logger import GameLogger
 from .utils import find_closest_enemy
+from .performance import performance
 from .collision_handler import (
     handle_player_enemy_collision,
     handle_player_powerup_collision,
@@ -12,4 +13,5 @@ __all__ = [
     "handle_player_enemy_collision",
     "handle_player_powerup_collision",
     "handle_projectile_enemy_collision",
+    "performance",
 ]

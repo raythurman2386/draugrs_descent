@@ -72,7 +72,7 @@ class TestCollisionDetection:
         # Create a projectile and an enemy at the same position
         projectile = Projectile((100, 100), (1, 0), 10)  # Projectile with damage 10
         enemy = Enemy((100, 100))
-        initial_health = enemy.current_health
+        initial_health = enemy.health
 
         # Test collision
         collided = pygame.sprite.collide_rect(projectile, enemy)
@@ -82,12 +82,12 @@ class TestCollisionDetection:
         result = collision_handler.handle_projectile_enemy_collision(projectile, enemy)
 
         # Enemy should have taken damage
-        assert enemy.current_health < initial_health
+        assert enemy.health < initial_health
         # Projectile should be deactivated
         assert not projectile.active
 
         # Check if the result indicates if the enemy died
-        if enemy.current_health <= 0:
+        if enemy.health <= 0:
             assert result is True  # Enemy died
         else:
             assert result is False  # Enemy still alive

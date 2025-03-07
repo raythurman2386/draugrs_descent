@@ -1,5 +1,5 @@
 import pygame
-from constants import PROJECTILE_WIDTH, PROJECTILE_HEIGHT, WHITE, PROJECTILE_DAMAGE
+from managers import config
 from utils.logger import GameLogger
 
 # Get a logger for the projectile module
@@ -16,24 +16,53 @@ class Projectile(pygame.sprite.Sprite):
         self.id = Projectile.next_id
         Projectile.next_id += 1
 
-        self.image = pygame.Surface((PROJECTILE_WIDTH, PROJECTILE_HEIGHT))
-        self.image.fill(WHITE)
+        # Get projectile dimensions from config
+        width = config.get("projectile", "dimensions", "width", default=10)
+        height = config.get("projectile", "dimensions", "height", default=10)
+
+        self.image = pygame.Surface((width, height))
+        self.image.fill(config.get_color("white"))
         self.rect = self.image.get_rect()
         self.rect.center = position
+        self.position = list(position)
         self.velocity = velocity
-        self.damage = damage if damage is not None else PROJECTILE_DAMAGE
-        self.active = True  # Added active attribute
 
+        # Get damage from config if not provided
+        self.damage = (
+            damage
+            if damage is not None
+            else config.get("projectile", "attributes", "damage", default=10)
+        )
+
+        self.active = True
         logger.debug(f"Projectile {self.id} created at {position} with velocity {velocity}")
 
     def update(self):
-        # Move the projectile based on its velocity
-        self.rect.x += self.velocity[0]
-        self.rect.y += self.velocity[1]
+        """Update the projectile position based on velocity."""
+        self.position[0] += self.velocity[0]
+        self.position[1] += self.velocity[1]
+        self.rect.center = (int(self.position[0]), int(self.position[1]))
 
-        # Optional: Remove projectile if it goes off-screen
-        screen_rect = pygame.display.get_surface().get_rect()
-        if not screen_rect.colliderect(self.rect):
-            logger.debug(f"Projectile {self.id} went off-screen and was removed")
-            self.active = False  # Set active to false
+        # Check if projectile is off-screen
+        screen_width = config.get("screen", "width", default=800)
+        screen_height = config.get("screen", "height", default=600)
+
+        if (
+            self.rect.right < 0
+            or self.rect.left > screen_width
+            or self.rect.bottom < 0
+            or self.rect.top > screen_height
+        ):
             self.kill()
+            logger.debug(f"Projectile {self.id} went off-screen and was removed")
+
+    def deactivate(self):
+        """Deactivate the projectile."""
+        self.active = False
+        logger.debug(f"Projectile {self.id} deactivated")
+
+    def kill(self):
+        """Override kill method to set active to False before removing from groups."""
+        self.active = False
+        super().kill()
+        logger.debug(f"Projectile {self.id} killed")

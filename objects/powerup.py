@@ -1,14 +1,7 @@
 import pygame
 import math
 from utils.logger import GameLogger
-from constants import (
-    POWERUP_WIDTH,
-    POWERUP_HEIGHT,
-    POWERUP_COLORS,
-    POWERUP_HEALTH_RESTORE,
-    POWERUP_SHIELD_DURATION,
-    POWERUP_WEAPON_BOOST_DURATION,
-)
+from managers import config
 
 # Get a logger for the powerup module
 logger = GameLogger.get_logger("powerup")
@@ -36,10 +29,15 @@ class Powerup(pygame.sprite.Sprite):
         self.type = powerup_type
         self.active = True
         self.creation_time = pygame.time.get_ticks()
-        self.lifespan = 10000  # 10 seconds lifespan
+        self.lifespan = config.get(
+            "powerups", "attributes", "lifespan", default=10000
+        )  # 10 seconds lifespan
 
         # Animation properties
-        self.base_size = (POWERUP_WIDTH, POWERUP_HEIGHT)
+        self.base_size = (
+            config.get("powerups", "dimensions", "width", default=30),
+            config.get("powerups", "dimensions", "height", default=30),
+        )
         self.pulse_factor = 0
         self.pulse_speed = 0.1
         self.pulse_size = 4  # Max amount to pulse
@@ -61,7 +59,9 @@ class Powerup(pygame.sprite.Sprite):
 
         # Create the surface
         self.image = pygame.Surface((int(current_width), int(current_height)))
-        color = POWERUP_COLORS.get(self.type, (255, 255, 255))  # Default to white if type not found
+        color = config.get(
+            "powerups", "colors", self.type, default=(255, 255, 255)
+        )  # Default to white if type not found
         self.image.fill(color)
 
         # Add a visual indicator for the powerup type
@@ -118,7 +118,9 @@ class Powerup(pygame.sprite.Sprite):
             # Restore health
             original_health = player.current_health
             player.current_health = min(
-                player.current_health + POWERUP_HEALTH_RESTORE, player.max_health
+                player.current_health
+                + config.get("powerups", "effects", "health_restore", default=30),
+                player.max_health,
             )
             health_gained = player.current_health - original_health
             logger.info(
@@ -129,16 +131,20 @@ class Powerup(pygame.sprite.Sprite):
             # Provide temporary invincibility
             player.invincible = True
             player.invincible_timer = pygame.time.get_ticks()
-            player.invincible_duration = POWERUP_SHIELD_DURATION
+            player.invincible_duration = config.get(
+                "powerups", "effects", "shield_duration", default=5000
+            )
             logger.info(
-                f"Shield powerup applied. Player invincible for {POWERUP_SHIELD_DURATION}ms"
+                f"Shield powerup applied. Player invincible for {config.get('powerups', 'effects', 'shield_duration', default=5000)}ms"
             )
 
         elif self.type == "weapon":
             # Apply weapon boost (increased fire rate)
-            player.activate_weapon_boost(POWERUP_WEAPON_BOOST_DURATION)
+            player.activate_weapon_boost(
+                config.get("powerups", "effects", "weapon_boost_duration", default=10000)
+            )
             logger.info(
-                f"Weapon boost powerup applied. Player's fire rate increased for {POWERUP_WEAPON_BOOST_DURATION}ms"
+                f"Weapon boost powerup applied. Player's fire rate increased for {config.get('powerups', 'effects', 'weapon_boost_duration', default=10000)}ms"
             )
 
         # Deactivate the powerup after use

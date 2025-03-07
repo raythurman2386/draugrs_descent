@@ -12,7 +12,7 @@ class TestEnemy:
         """Test that an Enemy object can be created with proper attributes."""
         position = (100, 200)
         enemy = Enemy(position)
-        assert enemy.current_health == enemy.max_health
+        assert enemy.health == enemy.max_health
         assert enemy.rect.center == position
         assert isinstance(enemy.image, pygame.Surface)
         assert hasattr(enemy, "id")  # Ensure it has a unique ID
@@ -20,17 +20,17 @@ class TestEnemy:
     def test_enemy_take_damage(self):
         """Test that the enemy takes damage correctly."""
         enemy = Enemy((100, 100))
-        initial_health = enemy.current_health
+        initial_health = enemy.health
 
         # Enemy takes 5 damage
         result = enemy.take_damage(5)
-        assert enemy.current_health == initial_health - 5
+        assert enemy.health == initial_health - 5
         assert result is False  # Enemy is not dead yet
 
         # Enemy takes lethal damage
-        enemy.current_health = 10
+        enemy.health = 10
         result = enemy.take_damage(10)
-        assert enemy.current_health <= 0
+        assert enemy.health <= 0
         assert result is True  # Enemy is dead
 
     def test_enemy_update_movement(self):

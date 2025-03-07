@@ -1,6 +1,6 @@
 import pygame
 from scenes import MainMenuScene, GameScene, PauseMenuScene, GameOverScene
-from managers import SceneManager
+from managers import SceneManager, config
 from utils.logger import GameLogger
 
 # Get a logger for the main module
@@ -10,10 +10,25 @@ logger = GameLogger.get_logger("main")
 def main():
     # Initialize Pygame
     pygame.init()
-    pygame.display.set_mode((800, 600))
-    pygame.display.set_caption("Draugr's Descent")
 
-    logger.info("Starting Draugr's Descent")
+    # Debug the config loading
+    logger.info("Printing configuration for debugging")
+    config.debug_print_config()
+
+    # Get screen configuration from config manager
+    screen_width = config.get("screen", "width", default=800)
+    screen_height = config.get("screen", "height", default=600)
+    game_caption = config.get("screen", "caption", default="Draugr's Descent")
+
+    # Create the game window
+    screen = pygame.display.set_mode((screen_width, screen_height))
+    pygame.display.set_caption(game_caption)
+
+    # Ensure the background is properly initialized
+    screen.fill(config.get_color("black"))
+    pygame.display.flip()
+
+    logger.info(f"Starting {game_caption} with resolution {screen_width}x{screen_height}")
 
     # Create scene manager and scenes
     scene_manager = SceneManager()

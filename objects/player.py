@@ -3,19 +3,7 @@ import math
 from utils.logger import GameLogger
 from utils import find_closest_enemy
 from .projectile import Projectile
-from constants import (
-    PLAYER_WIDTH,
-    PLAYER_HEIGHT,
-    GREEN,
-    PLAYER_START_X,
-    PLAYER_START_Y,
-    PLAYER_MAX_HEALTH,
-    PLAYER_MOVEMENT_SPEED,
-    PLAYER_SHOT_COOLDOWN,
-    PLAYER_INVINCIBILITY_DURATION,
-    POWERUP_WEAPON_BOOST_FACTOR,
-    POWERUP_WEAPON_BOOST_DURATION,
-)
+from managers import config
 
 # Get a logger for the player module
 logger = GameLogger.get_logger("player")
@@ -24,30 +12,41 @@ logger = GameLogger.get_logger("player")
 class Player(pygame.sprite.Sprite):
     def __init__(self, position=None):
         super().__init__()
-        self.image = pygame.Surface((PLAYER_WIDTH, PLAYER_HEIGHT))
-        self.image.fill(GREEN)
+        # Get player dimensions from config
+        width = config.get("player", "dimensions", "width", default=50)
+        height = config.get("player", "dimensions", "height", default=50)
+
+        self.image = pygame.Surface((width, height))
+        self.image.fill(config.get_color("green"))
         self.rect = self.image.get_rect()
-        self.rect.center = position if position else (PLAYER_START_X, PLAYER_START_Y)
-        self.max_health = PLAYER_MAX_HEALTH
-        self.current_health = PLAYER_MAX_HEALTH
+
+        # Get player start position from config
+        start_x = config.get("player", "start_position", "x", default=400)
+        start_y = config.get("player", "start_position", "y", default=300)
+        self.rect.center = position if position else (start_x, start_y)
+
+        # Get player attributes from config
+        self.max_health = config.get("player", "attributes", "max_health", default=100)
+        self.current_health = self.max_health
         self.invincible = False
         self.invincible_timer = 0
-        self.invincible_duration = PLAYER_INVINCIBILITY_DURATION
+        self.invincible_duration = config.get(
+            "player", "attributes", "invincibility_duration", default=1000
+        )
         self.last_shot_time = 0
-        self.shot_cooldown = PLAYER_SHOT_COOLDOWN
+        self.shot_cooldown = config.get("player", "attributes", "shot_cooldown", default=500)
 
         # Weapon boost properties
         self.weapon_boost_active = False
         self.weapon_boost_timer = 0
         self.weapon_boost_duration = 0
-        self.base_shot_cooldown = PLAYER_SHOT_COOLDOWN
+        self.base_shot_cooldown = config.get("player", "attributes", "shot_cooldown", default=500)
 
         # Visual effect properties
         self.flash_effect = False
-        self.flash_duration = 500  # milliseconds
-        self.flash_start_time = 0
+        self.flash_duration = 200
+        self.flash_timer = 0
         self.flash_color = None
-        self.original_image = self.image.copy()
 
         # These will be set by the game class
         self.screen = None
@@ -62,16 +61,16 @@ class Player(pygame.sprite.Sprite):
         keys = pygame.key.get_pressed()
         moving = False
         if keys[pygame.K_LEFT]:
-            self.rect.x -= PLAYER_MOVEMENT_SPEED
+            self.rect.x -= config.get("player", "attributes", "movement_speed", default=5)
             moving = True
         if keys[pygame.K_RIGHT]:
-            self.rect.x += PLAYER_MOVEMENT_SPEED
+            self.rect.x += config.get("player", "attributes", "movement_speed", default=5)
             moving = True
         if keys[pygame.K_UP]:
-            self.rect.y -= PLAYER_MOVEMENT_SPEED
+            self.rect.y -= config.get("player", "attributes", "movement_speed", default=5)
             moving = True
         if keys[pygame.K_DOWN]:
-            self.rect.y += PLAYER_MOVEMENT_SPEED
+            self.rect.y += config.get("player", "attributes", "movement_speed", default=5)
             moving = True
 
         # Keep player within screen bounds
@@ -149,7 +148,7 @@ class Player(pygame.sprite.Sprite):
     def start_flash_effect(self, color):
         """Start a flash effect with the given color."""
         self.flash_effect = True
-        self.flash_start_time = pygame.time.get_ticks()
+        self.flash_timer = pygame.time.get_ticks()
         self.flash_color = color
         logger.debug(f"Started flash effect with color {color}")
 
@@ -158,7 +157,8 @@ class Player(pygame.sprite.Sprite):
         current_time = pygame.time.get_ticks()
 
         # Reset image to original before applying effects
-        self.image = self.original_image.copy()
+        self.image = pygame.Surface((self.rect.width, self.rect.height)).convert_alpha()
+        self.image.fill(config.get_color("green"))
 
         # Handle invincibility visual effect (pulsing)
         if self.invincible:
@@ -171,7 +171,7 @@ class Player(pygame.sprite.Sprite):
 
         # Handle flash effect
         if self.flash_effect:
-            if current_time - self.flash_start_time < self.flash_duration:
+            if current_time - self.flash_timer < self.flash_duration:
                 # Apply color flash
                 flash_surface = pygame.Surface(self.image.get_size()).convert_alpha()
                 flash_surface.fill(self.flash_color)
@@ -183,14 +183,19 @@ class Player(pygame.sprite.Sprite):
                 self.flash_effect = False
                 logger.debug("Flash effect ended")
 
-    def activate_weapon_boost(self, duration=POWERUP_WEAPON_BOOST_DURATION):
+    def activate_weapon_boost(
+        self, duration=config.get("powerups", "weapon_boost", "duration", default=5000)
+    ):
         """Activate weapon boost, increasing fire rate."""
         self.weapon_boost_active = True
         self.weapon_boost_timer = pygame.time.get_ticks()
         self.weapon_boost_duration = duration
 
         # Reduce shot cooldown (increase fire rate)
-        self.shot_cooldown = int(self.base_shot_cooldown * (1 - POWERUP_WEAPON_BOOST_FACTOR))
+        self.shot_cooldown = int(
+            self.base_shot_cooldown
+            * (1 - config.get("powerups", "weapon_boost", "factor", default=0.5))
+        )
         logger.info(
             f"Weapon boost activated. Shot cooldown reduced to {self.shot_cooldown}ms for {duration}ms"
         )

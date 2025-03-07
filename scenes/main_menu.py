@@ -1,6 +1,6 @@
 import pygame
 from .scene import Scene
-from constants import SCREEN_WIDTH, SCREEN_HEIGHT, BLACK, WHITE
+from managers import config
 
 
 class MainMenuScene(Scene):
@@ -52,18 +52,22 @@ class MainMenuScene(Scene):
 
     def render(self):
         """Render the main menu."""
-        self.screen.fill(BLACK)
+        screen_width = config.get("screen", "width", default=800)
+        screen_height = config.get("screen", "height", default=600)
+
+        # Fill the background with black
+        self.screen.fill(config.get_color("black"))
 
         # Draw title
-        title = self.title_font.render("Draugr's Descent", True, WHITE)
-        title_rect = title.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 4))
+        title = self.title_font.render("Draugr's Descent", True, config.get_color("white"))
+        title_rect = title.get_rect(center=(screen_width // 2, screen_height // 4))
         self.screen.blit(title, title_rect)
 
         # Draw menu options
         for i, option in enumerate(self.menu_options):
-            color = (255, 255, 0) if i == self.selected_option else WHITE
+            color = (255, 255, 0) if i == self.selected_option else config.get_color("white")
             text = self.button_font.render(option["text"], True, color)
-            position = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + i * 60)
+            position = (screen_width // 2, screen_height // 2 + i * 60)
             text_rect = text.get_rect(center=position)
             self.screen.blit(text, text_rect)
 

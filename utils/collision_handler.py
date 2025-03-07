@@ -1,7 +1,6 @@
 """Handle collisions between game objects."""
 
 from utils.logger import GameLogger
-from constants import POWERUP_COLORS
 
 # Get a logger for the collision handler module
 logger = GameLogger.get_logger("collision_handler")
@@ -35,8 +34,10 @@ def handle_player_powerup_collision(player, powerup):
 
     # Trigger visual effect with the powerup's color
     if hasattr(player, "start_flash_effect"):
-        # Get the color for the visual effect
-        color = POWERUP_COLORS.get(powerup.type, (255, 255, 255))
+        # Get the color for the visual effect from config - using lazy import
+        from managers import config
+
+        color = config.get_color(powerup.type)
         player.start_flash_effect(color)
 
     # Apply the powerup effect
@@ -51,19 +52,7 @@ def handle_projectile_enemy_collision(projectile, enemy):
         enemy: The enemy object.
 
     Returns:
-        bool: True if enemy died, False otherwise.
+        bool: True if enemy was killed, False otherwise.
     """
-    logger.debug(f"Projectile {projectile.id} hit Enemy {enemy.id}")
-
-    # Check if projectile is active to prevent double hits
-    if not hasattr(projectile, "active") or projectile.active:
-        # Deactivate projectile if it has that attribute
-        if hasattr(projectile, "active"):
-            projectile.active = False
-        else:
-            projectile.kill()  # Remove from sprite groups
-
-        # Apply damage to enemy
-        return enemy.take_damage(projectile.damage)
-
-    return False
+    projectile.kill()
+    return enemy.take_damage(projectile.damage)

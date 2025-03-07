@@ -2,20 +2,10 @@ import pygame
 import random
 from .scene import Scene
 from objects import Player, Enemy, Powerup
-from utils.logger import GameLogger
-from utils.utils import adjust_log_level
 from utils import handle_player_powerup_collision, handle_player_enemy_collision
-from utils.scoring import ScoreManager
-from constants import (
-    SCREEN_WIDTH,
-    SCREEN_HEIGHT,
-    BLACK,
-    FRAME_RATE,
-    ENEMY_SPAWN_INTERVAL,
-    ENEMY_SPAWN_EDGES,
-    HEALTH_BAR_WIDTH,
-    HEALTH_BAR_HEIGHT,
-)
+from managers import config, game_state, ScoreManager
+from managers.game_state_manager import GameState
+from utils.logger import GameLogger
 import logging
 
 # Get a logger for the game scene
@@ -68,6 +58,9 @@ class GameScene(Scene):
         self.start_time = pygame.time.get_ticks()
         self.powerups_collected = 0
 
+        # Set game state to PLAYING
+        game_state.change_state(GameState.PLAYING)
+
         logger.info("Game state initialized/reinitialized")
 
     def reset(self):
@@ -80,27 +73,32 @@ class GameScene(Scene):
     def spawn_enemy(self):
         """Spawn an enemy at a random screen edge."""
         current_time = pygame.time.get_ticks()
-        if current_time - self.last_spawn_time > ENEMY_SPAWN_INTERVAL:
+        enemy_spawn_interval = config.get("gameplay", "enemy_spawn_interval", default=1500)
+
+        if current_time - self.last_spawn_time > enemy_spawn_interval:
+            screen_width = config.get("screen", "width", default=800)
+            screen_height = config.get("screen", "height", default=600)
+
             edge = random.randint(0, 3)
             if edge == 0:  # Top
                 position = (
-                    random.randint(0, SCREEN_WIDTH),
-                    ENEMY_SPAWN_EDGES["TOP"][1],
+                    random.randint(0, screen_width),
+                    0,  # Top edge
                 )
             elif edge == 1:  # Bottom
                 position = (
-                    random.randint(0, SCREEN_WIDTH),
-                    ENEMY_SPAWN_EDGES["BOTTOM"][1],
+                    random.randint(0, screen_width),
+                    screen_height,  # Bottom edge
                 )
             elif edge == 2:  # Left
                 position = (
-                    ENEMY_SPAWN_EDGES["LEFT"][0],
-                    random.randint(0, SCREEN_HEIGHT),
+                    0,  # Left edge
+                    random.randint(0, screen_height),
                 )
             else:  # Right
                 position = (
-                    ENEMY_SPAWN_EDGES["RIGHT"][0],
-                    random.randint(0, SCREEN_HEIGHT),
+                    screen_width,  # Right edge
+                    random.randint(0, screen_height),
                 )
 
             enemy = Enemy(position)
@@ -119,6 +117,8 @@ class GameScene(Scene):
                 # Stop the game music before switching to pause menu
                 self.sound_manager.stop_music()
 
+                # Change state to PAUSED and switch scene
+                game_state.change_state(GameState.PAUSED)
                 self.switch_to_scene("pause")
             # Debug level toggles
             elif event.key == pygame.K_F1:
@@ -142,7 +142,8 @@ class GameScene(Scene):
 
         # Spawn enemies on a timer
         current_time = pygame.time.get_ticks()
-        if current_time - self.last_spawn_time > ENEMY_SPAWN_INTERVAL:
+        enemy_spawn_interval = config.get("gameplay", "enemy_spawn_interval", default=1500)
+        if current_time - self.last_spawn_time > enemy_spawn_interval:
             self.spawn_enemy()
             self.last_spawn_time = current_time
 
@@ -166,12 +167,14 @@ class GameScene(Scene):
                     self.drop_powerup(enemy.rect.center)
 
         # Clean up off-screen projectiles
+        screen_width = config.get("screen", "width", default=800)
+        screen_height = config.get("screen", "height", default=600)
         for projectile in self.projectile_group.copy():
             if (
                 projectile.rect.right < 0
-                or projectile.rect.left > SCREEN_WIDTH
+                or projectile.rect.left > screen_width
                 or projectile.rect.bottom < 0
-                or projectile.rect.top > SCREEN_HEIGHT
+                or projectile.rect.top > screen_height
             ):
                 projectile.kill()
 
@@ -193,6 +196,9 @@ class GameScene(Scene):
                 f"Game over. Score: {self.score_manager.current_score}, High Score: {self.score_manager.high_score}, "
                 f"Enemies killed: {self.enemies_killed}, Powerups: {self.powerups_collected}, Time survived: {self.time_survived}s"
             )
+
+            # Change game state to GAME_OVER
+            game_state.change_state(GameState.GAME_OVER)
 
             # Pass game stats to the game over scene
             game_over_scene = self.scene_manager.scenes["game_over"]
@@ -219,6 +225,7 @@ class GameScene(Scene):
             and pygame.time.get_ticks() - self.player.last_shot_time > self.player.shot_cooldown
         ):
             if random.random() < 0.3:  # Don't play on every shot to avoid sound overload
+                # Use asset manager to play sound
                 self.play_sound("player_hit")
 
     def _handle_collisions(self):
@@ -292,43 +299,52 @@ class GameScene(Scene):
 
     def render(self):
         """Draw the game scene."""
-        self.screen.fill(BLACK)
+        # Get background color from config
+        background_color = config.get_color("black")
+        self.screen.fill(background_color)
         self.all_sprites.draw(self.screen)
+
+        # Get health bar dimensions from config
+        health_bar_width = config.get("ui", "health_bar_width", default=200)
+        health_bar_height = config.get("ui", "health_bar_height", default=20)
 
         # Draw health bar
         health_ratio = self.player.current_health / self.player.max_health
         pygame.draw.rect(
-            self.screen, (255, 0, 0), (10, 10, HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT)
+            self.screen, (255, 0, 0), (10, 10, health_bar_width, health_bar_height)
         )  # Background
         pygame.draw.rect(
             self.screen,
             (0, 255, 0),
-            (10, 10, HEALTH_BAR_WIDTH * health_ratio, HEALTH_BAR_HEIGHT),
+            (10, 10, health_bar_width * health_ratio, health_bar_height),
         )  # Health
 
         # Use small font for side UI elements to avoid cutoff
         ui_font = self.small_font if hasattr(self, "small_font") else self.font
+
+        # Get screen dimensions from config
+        screen_width = config.get("screen", "width", default=800)
 
         # Right-aligned game stats - moved further from the edge
         right_margin = 140  # Increased from 100 to give more space
         self.draw_text(
             f"Enemies: {self.enemies_killed}",
             (255, 255, 255),
-            SCREEN_WIDTH - right_margin,
+            screen_width - right_margin,
             20,
             ui_font,
         )
         self.draw_text(
             f"Powerups: {self.powerups_collected}",
             (255, 255, 255),
-            SCREEN_WIDTH - right_margin,
+            screen_width - right_margin,
             50,
             ui_font,
         )
         self.draw_text(
             f"Time: {self.time_survived}s",
             (255, 255, 255),
-            SCREEN_WIDTH - right_margin,
+            screen_width - right_margin,
             80,
             ui_font,
         )
@@ -337,14 +353,17 @@ class GameScene(Scene):
         score_text = f"Score: {self.score_manager.get_formatted_score()}"
         high_score_text = f"High: {self.score_manager.get_formatted_high_score()}"
 
-        self.draw_text(score_text, (255, 255, 0), SCREEN_WIDTH // 2, 20)  # Yellow color for score
+        self.draw_text(score_text, (255, 255, 0), screen_width // 2, 20)  # Yellow color for score
         self.draw_text(
-            high_score_text, (255, 165, 0), SCREEN_WIDTH // 2, 50
+            high_score_text, (255, 165, 0), screen_width // 2, 50
         )  # Orange color for high score
 
     def resume_from_pause(self):
         """Resume the game after returning from pause menu."""
         self.paused = False
+
+        # Reset game state to PLAYING
+        game_state.change_state(GameState.PLAYING)
 
         # Play game music again (since we might have stopped it when pausing)
         self.play_scene_music("game")

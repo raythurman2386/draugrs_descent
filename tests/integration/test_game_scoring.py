@@ -1,7 +1,7 @@
 import pytest
 import pygame
 from scenes.game_scene import GameScene
-from utils.scoring import ScoreManager
+from managers.score_manager import ScoreManager
 from objects.enemy import Enemy
 from objects.powerup import Powerup
 
