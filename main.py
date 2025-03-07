@@ -8,12 +8,11 @@ logger = GameLogger.get_logger("main")
 
 
 def main():
-    # Initialize Pygame
     pygame.init()
 
     # Debug the config loading
-    logger.info("Printing configuration for debugging")
-    config.debug_print_config()
+    # logger.info("Printing configuration for debugging")
+    # config.debug_print_config()
 
     # Get screen configuration from config manager
     screen_width = config.get("screen", "width", default=800)

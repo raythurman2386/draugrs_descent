@@ -22,7 +22,7 @@ This document outlines the planned development path for Draugr's Descent, organi
 - [x] Create audio settings menu
 
 ### Technical Improvements
-- [ ] Optimize collision detection for improved performance
+- [x] Optimize collision detection for improved performance
 - [x] Add configuration file for game settings
 - [ ] Create a proper installation package
 

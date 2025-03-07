@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Refactored monolithic game class into scene-based architecture
 - Standardized font usage across all scenes using Asset Manager
 - Improved configuration access for screen dimensions and colors
+- Optimized collision detection for improved performance
 
 ### Fixed
 - Projectile issues where projectiles weren't appearing on screen
