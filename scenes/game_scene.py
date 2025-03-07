@@ -2,7 +2,13 @@ import pygame
 import random
 from .scene import Scene
 from objects import Player, Enemy, Powerup
-from utils import handle_player_powerup_collision, handle_player_enemy_collision
+from objects.enemy import create_enemy
+from utils import (
+    handle_player_enemy_collision,
+    handle_player_powerup_collision,
+    handle_projectile_enemy_collision,
+    handle_enemy_projectile_player_collision,
+)
 from managers import config, game_state, ScoreManager
 from managers.game_state_manager import GameState
 from utils.logger import GameLogger
@@ -101,11 +107,13 @@ class GameScene(Scene):
                     random.randint(0, screen_height),
                 )
 
-            enemy = Enemy(position)
+            # Use the factory function to create an enemy (randomly selects type based on weights)
+            enemy = create_enemy(position)
+
             self.enemy_group.add(enemy)
             self.all_sprites.add(enemy)
             self.last_spawn_time = current_time
-            logger.debug(f"Enemy spawned at {position}")
+            logger.debug(f"{enemy.enemy_type.capitalize()} enemy spawned at {position}")
 
     def handle_event(self, event):
         """Handle game-specific events."""
@@ -152,7 +160,16 @@ class GameScene(Scene):
 
         # Update all sprites - enemy update needs player position
         self.player.update()
-        self.enemy_group.update(self.player.rect.center)
+        current_time = pygame.time.get_ticks()
+        for enemy in self.enemy_group:
+            if hasattr(enemy, "enemy_type") and enemy.enemy_type == Enemy.TYPE_RANGED:
+                # RangedEnemy needs additional parameters
+                enemy.update(
+                    self.player.rect.center, current_time, self.projectile_group, self.all_sprites
+                )
+            else:
+                # Basic and Charger enemies just need player position
+                enemy.update(self.player.rect.center, current_time)
         self.projectile_group.update()
         self.powerup_group.update()
 
@@ -233,23 +250,44 @@ class GameScene(Scene):
         # Projectiles vs Enemies
         hits = pygame.sprite.groupcollide(self.projectile_group, self.enemy_group, True, False)
         for projectile, enemies in hits.items():
-            for enemy in enemies:
-                # Use the enemy's take_damage method
-                if enemy.take_damage(projectile.damage):
-                    self.play_sound("enemy_hit")
-                    self.handle_enemy_death(enemy)
-                    logger.debug(f"Enemy killed. Total killed: {self.enemies_killed}")
+            # Only handle collisions for player projectiles (not enemy projectiles)
+            if not projectile.is_enemy_projectile:
+                for enemy in enemies:
+                    # Use the collision handler
+                    if handle_projectile_enemy_collision(projectile, enemy):
+                        self.play_sound("enemy_hit")
+                        self.handle_enemy_death(enemy)
+                        logger.debug(f"Enemy killed. Total killed: {self.enemies_killed}")
+
+        # Enemy Projectiles vs Player
+        if not self.player.invincible:
+            # Filter the projectile group to only include enemy projectiles
+            enemy_projectiles = [p for p in self.projectile_group if p.is_enemy_projectile]
+
+            # Check for collisions between player and enemy projectiles
+            projectile_hits = pygame.sprite.spritecollide(
+                self.player, pygame.sprite.Group(enemy_projectiles), True
+            )
+
+            for projectile in projectile_hits:
+                # Use the collision handler
+                if handle_enemy_projectile_player_collision(self.player, projectile):
+                    self.play_sound("player_hit")
+
+                    # Check if player died from this projectile hit
+                    if self.player.current_health <= 0:
+                        self.play_sound("game_lost")
 
         # Player vs Enemies
         if not self.player.invincible:
             enemy_collisions = pygame.sprite.spritecollide(self.player, self.enemy_group, False)
             for enemy in enemy_collisions:
-                handle_player_enemy_collision(self.player, enemy)
-                self.play_sound("player_hit")
+                if handle_player_enemy_collision(self.player, enemy):
+                    self.play_sound("player_hit")
 
-                # Check if player died from this collision
-                if self.player.current_health <= 0:
-                    self.play_sound("game_lost")
+                    # Check if player died from this collision
+                    if self.player.current_health <= 0:
+                        self.play_sound("game_lost")
 
         # Player vs Powerups
         powerup_collisions = pygame.sprite.spritecollide(self.player, self.powerup_group, False)

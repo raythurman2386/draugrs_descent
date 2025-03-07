@@ -37,7 +37,7 @@ player:
     max_health: 100
     movement_speed: 5
     shot_cooldown: 500  # milliseconds
-    invincibility_duration: 1000  # milliseconds
+    invincibility_duration: 300  # milliseconds
 
 # Enemy Settings
 enemy:

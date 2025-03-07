@@ -56,3 +56,18 @@ def handle_projectile_enemy_collision(projectile, enemy):
     """
     projectile.kill()
     return enemy.take_damage(projectile.damage)
+
+
+def handle_enemy_projectile_player_collision(player, projectile):
+    """Handle collision between enemy projectile and player.
+
+    Args:
+        player: The player object.
+        projectile: The projectile object.
+
+    Returns:
+        bool: True if player was damaged, False otherwise.
+    """
+    logger.debug(f"Player hit by enemy projectile, dealing {projectile.damage} damage")
+    projectile.kill()
+    return player.take_damage(projectile.damage)
