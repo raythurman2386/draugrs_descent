@@ -1,7 +1,6 @@
 import pygame
 import random
 
-from utils.utils import adjust_log_level
 from .scene import Scene
 from objects import Player, Enemy, Powerup
 from objects.enemy import create_enemy
@@ -143,16 +142,6 @@ class GameScene(Scene):
                 # Change state to PAUSED and switch scene
                 game_state.change_state(GameState.PAUSED)
                 self.switch_to_scene("pause")
-            # Debug level toggles
-            elif event.key == pygame.K_F1:
-                adjust_log_level(logging.DEBUG)
-                logger.debug("Debug logging enabled")
-            elif event.key == pygame.K_F2:
-                adjust_log_level(logging.INFO)
-                logger.info("Info logging enabled")
-            elif event.key == pygame.K_F3:
-                adjust_log_level(logging.WARNING)
-                logger.warning("Warning logging enabled")
 
     def update(self):
         """Update game state for the current frame."""

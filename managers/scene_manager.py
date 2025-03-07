@@ -1,4 +1,10 @@
 import pygame
+from utils.performance import performance
+from utils.logger import GameLogger
+from utils.utils import adjust_log_level
+import logging
+
+logger = GameLogger.get_logger("scene_manager")
 
 
 class SceneManager:
@@ -33,8 +39,14 @@ class SceneManager:
             raise ValueError("No active scene set.")
 
         frame_rate = 60
+        logger.info("Starting game loop with performance monitoring enabled")
 
         while self.running:
+            # Start timing the frame
+            performance.start_frame()
+
+            # Process events section
+            performance.start_section("events")
             events = pygame.event.get()
 
             # Check for quit event
@@ -42,19 +54,43 @@ class SceneManager:
                 if event.type == pygame.QUIT:
                     self.running = False
                     break
+                # Toggle performance metrics display with F4
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_F4:
+                    performance.toggle_metrics_display()
+                    logger.debug("Performance metrics display toggled")
+                # Log level adjustment keybinds
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_F1:
+                    adjust_log_level(logging.DEBUG)
+                    logger.debug("Debug logging enabled")
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_F2:
+                    adjust_log_level(logging.INFO)
+                    logger.info("Info logging enabled")
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_F3:
+                    adjust_log_level(logging.WARNING)
+                    logger.warning("Warning logging enabled")
 
             # Process scene events
             if self.current_scene.process_events(events):
                 self.running = False
+            performance.end_section()
 
-            # Update scene
+            # Update scene section
+            performance.start_section("update")
             self.current_scene.update()
+            performance.end_section()
 
-            # Render scene
+            # Render scene section
+            performance.start_section("render")
             self.current_scene.render()
+
+            # Draw performance metrics if enabled
+            performance.draw_metrics(pygame.display.get_surface())
+
             pygame.display.flip()
+            performance.end_section()
 
             # Handle scene transition
+            performance.start_section("scene_transition")
             if self.current_scene.done:
                 if self.current_scene.next_scene:
                     self.set_active_scene(self.current_scene.next_scene)
@@ -62,9 +98,11 @@ class SceneManager:
                     self.current_scene.next_scene = None
                 else:
                     self.running = False
+            performance.end_section()
 
             # Control frame rate
             self.current_scene.clock.tick(frame_rate)
 
+        logger.info("Game loop ended")
         # Clean up
         pygame.quit()
