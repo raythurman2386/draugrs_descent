@@ -52,6 +52,6 @@ models/
 *.model
 *.joblib
 
-*.png
+
 data/
 .windsurfrules
