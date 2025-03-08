@@ -474,7 +474,7 @@ class CollisionSystem:
             # Check for actual collisions
             enemies_hit = []
             for enemy in potential_enemies:
-                if projectile.rect.colliderect(enemy.rect):
+                if mask_collision(projectile, enemy):
                     enemies_hit.append(enemy)
 
             if enemies_hit:
@@ -518,7 +518,7 @@ class CollisionSystem:
         # Check for actual collisions
         projectiles_hit = []
         for projectile in potential_projectiles:
-            if player.rect.colliderect(projectile.rect):
+            if mask_collision(player, projectile):
                 projectiles_hit.append(projectile)
 
         return projectiles_hit
@@ -554,7 +554,7 @@ class CollisionSystem:
         # Check for actual collisions
         enemies_hit = []
         for enemy in potential_enemies:
-            if player.rect.colliderect(enemy.rect):
+            if mask_collision(player, enemy):
                 enemies_hit.append(enemy)
 
         return enemies_hit
@@ -588,11 +588,68 @@ class CollisionSystem:
         # Check for actual collisions
         powerups_hit = []
         for powerup in potential_powerups:
-            if (
-                player.rect.colliderect(powerup.rect)
-                and hasattr(powerup, "active")
-                and powerup.active
-            ):
+            if mask_collision(player, powerup) and hasattr(powerup, "active") and powerup.active:
                 powerups_hit.append(powerup)
 
         return powerups_hit
+
+
+def pixel_perfect_collision(sprite1, sprite2):
+    """
+    Check for pixel-perfect collision between two sprites.
+
+    Args:
+        sprite1: First sprite to check
+        sprite2: Second sprite to check
+
+    Returns:
+        True if there's a pixel-perfect collision, False otherwise
+    """
+    # First check if the bounding rectangles collide
+    if not sprite1.rect.colliderect(sprite2.rect):
+        return False
+
+    # If they do, perform pixel-perfect collision detection
+    # Calculate the overlap rectangle between the two sprites
+    x_offset = sprite2.rect.x - sprite1.rect.x
+    y_offset = sprite2.rect.y - sprite1.rect.y
+
+    # Loop through each pixel in the overlap area
+    for x in range(max(0, -x_offset), min(sprite1.rect.width, sprite2.rect.width - x_offset)):
+        for y in range(max(0, -y_offset), min(sprite1.rect.height, sprite2.rect.height - y_offset)):
+            # Check if both pixels at this position are opaque
+            try:
+                mask1 = sprite1.image.get_at((x, y))[3] > 0  # Alpha > 0
+                mask2 = sprite2.image.get_at((x + x_offset, y + y_offset))[3] > 0  # Alpha > 0
+                if mask1 and mask2:
+                    return True
+            except IndexError:
+                # Skip pixels that are out of bounds
+                continue
+
+    return False
+
+
+def mask_collision(sprite1, sprite2):
+    """
+    More efficient pixel-perfect collision detection using Pygame masks.
+
+    Args:
+        sprite1: First sprite to check
+        sprite2: Second sprite to check
+
+    Returns:
+        True if there's a mask collision, False otherwise
+    """
+    # Create masks for both sprites (if they don't already have them)
+    if not hasattr(sprite1, "mask") or sprite1.mask is None:
+        sprite1.mask = pygame.mask.from_surface(sprite1.image)
+
+    if not hasattr(sprite2, "mask") or sprite2.mask is None:
+        sprite2.mask = pygame.mask.from_surface(sprite2.image)
+
+    # Calculate the offset between the two sprites
+    offset = (sprite2.rect.x - sprite1.rect.x, sprite2.rect.y - sprite1.rect.y)
+
+    # Check if the masks overlap at the given offset
+    return sprite1.mask.overlap(sprite2.mask, offset) is not None

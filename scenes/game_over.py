@@ -27,7 +27,7 @@ class GameOverScene(Scene):
             {"text": "Exit", "action": "exit"},
         ]
         self.selected_option = 0
-        
+
         # UI theme from config
         self.ui_theme = config.get("ui", "default_theme", default="blue")
         self.load_ui_assets()
@@ -35,56 +35,70 @@ class GameOverScene(Scene):
     def load_ui_assets(self):
         """Load UI assets for the game over screen."""
         logger.debug(f"Loading game over UI assets with theme: {self.ui_theme}")
-        
+
         # Load the panel and buttons
         self.panel = game_asset_manager.get_ui_element(f"{self.ui_theme}_panel.png", self.ui_theme)
-        self.button_normal = game_asset_manager.get_ui_element(f"{self.ui_theme}_button00.png", self.ui_theme)
-        self.button_hover = game_asset_manager.get_ui_element(f"{self.ui_theme}_button01.png", self.ui_theme)
-        
+        self.button_normal = game_asset_manager.get_ui_element(
+            f"{self.ui_theme}_button00.png", self.ui_theme
+        )
+        self.button_hover = game_asset_manager.get_ui_element(
+            f"{self.ui_theme}_button01.png", self.ui_theme
+        )
+
         # Get screen dimensions
         self.screen_width = config.get("screen", "width", default=800)
         self.screen_height = config.get("screen", "height", default=600)
-        
+
         # Get panel dimensions from config
         panel_width_ratio = config.get("ui", "game_over", "panel", "width_ratio", default=0.6)
         panel_height_ratio = config.get("ui", "game_over", "panel", "height_ratio", default=0.75)
         panel_width = int(self.screen_width * panel_width_ratio)
         panel_height = int(self.screen_height * panel_height_ratio)
-        
+
         # Scale the panel to fit our needs
         self.panel = pygame.transform.scale(self.panel, (panel_width, panel_height))
-        
+
         # Calculate panel position
-        self.panel_rect = self.panel.get_rect(center=(self.screen_width // 2, self.screen_height // 2))
-        
+        self.panel_rect = self.panel.get_rect(
+            center=(self.screen_width // 2, self.screen_height // 2)
+        )
+
         # Get button configuration from config
         button_width_ratio = config.get("ui", "game_over", "buttons", "width_ratio", default=0.7)
         button_height = config.get("ui", "game_over", "buttons", "height", default=50)
         button_spacing = config.get("ui", "game_over", "buttons", "spacing", default=70)
-        
+
         # Scale buttons to fit within the panel based on config
         button_width = int(panel_width * button_width_ratio)
-        
+
         # Create scaled buttons
-        self.scaled_button_normal = pygame.transform.scale(self.button_normal, (button_width, button_height))
-        self.scaled_button_hover = pygame.transform.scale(self.button_hover, (button_width, button_height))
-        
+        self.scaled_button_normal = pygame.transform.scale(
+            self.button_normal, (button_width, button_height)
+        )
+        self.scaled_button_hover = pygame.transform.scale(
+            self.button_hover, (button_width, button_height)
+        )
+
         # Calculate button positions - position them at the bottom of the panel with good spacing
         self.button_rects = []
-        
+
         # Calculate where the buttons should start (from bottom of panel, leave some space)
-        total_button_height = len(self.menu_options) * button_height + (len(self.menu_options) - 1) * (button_spacing - button_height)
-        button_start_y = self.panel_rect.bottom - total_button_height - 30  # 30px padding from bottom
-        
+        total_button_height = len(self.menu_options) * button_height + (
+            len(self.menu_options) - 1
+        ) * (button_spacing - button_height)
+        button_start_y = (
+            self.panel_rect.bottom - total_button_height - 30
+        )  # 30px padding from bottom
+
         for i in range(len(self.menu_options)):
             button_rect = self.scaled_button_normal.get_rect(
                 center=(self.panel_rect.centerx, button_start_y + i * button_spacing)
             )
             self.button_rects.append(button_rect)
-        
+
         # Load button font based on config
         button_font_size = config.get("ui", "game_over", "buttons", "font_size", default=24)
-        
+
         # Map numeric font size to closest pre-defined size name
         if button_font_size >= 36:
             size_name = "title"
@@ -96,14 +110,14 @@ class GameOverScene(Scene):
             size_name = "ui"
         else:
             size_name = "small"
-            
+
         self.button_font = game_asset_manager.get_font("default", size_name)
-        
+
         # Load title font
         title_font_size = config.get("ui", "game_over", "title", "font_size", default=48)
         title_size_name = "title" if title_font_size >= 36 else "heading"
         self.game_over_title_font = game_asset_manager.get_font("default", title_size_name)
-        
+
         # Load stats font - use smaller font for stats to avoid overlap
         stats_font_size = config.get("ui", "game_over", "stats", "font_size", default=18)
         stats_size_name = "small"
@@ -111,9 +125,9 @@ class GameOverScene(Scene):
             stats_size_name = "normal"
         elif stats_font_size >= 24:
             stats_size_name = "ui"
-        
+
         self.stats_font = game_asset_manager.get_font("default", stats_size_name)
-        
+
         logger.debug(f"Game over UI assets loaded with {len(self.button_rects)} buttons")
 
     def reset(self):
@@ -144,7 +158,7 @@ class GameOverScene(Scene):
                 self.play_sound("menu_navigate")
             elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
                 self.select_current_option()
-        
+
         # Handle mouse events
         elif event.type == pygame.MOUSEMOTION:
             # Check if mouse is over any button
@@ -155,7 +169,7 @@ class GameOverScene(Scene):
                         self.selected_option = i
                         self.play_sound("menu_navigate")
                     break
-        
+
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:  # Left mouse button
                 mouse_pos = pygame.mouse.get_pos()
@@ -191,25 +205,27 @@ class GameOverScene(Scene):
         # Set background color
         background_color = config.get("ui", "game_over", "background_color", default="black")
         self.screen.fill(config.get_color(background_color))
-        
+
         # Draw the panel background
         self.screen.blit(self.panel, self.panel_rect)
 
         # Get title configuration
         title_color = config.get("ui", "game_over", "title", "color", default="red")
-        
+
         # Draw title - position at the top of the panel with good spacing
         title = self.game_over_title_font.render("GAME OVER", True, config.get_color(title_color))
         title_rect = title.get_rect(center=(self.screen_width // 2, self.panel_rect.top + 60))
         self.screen.blit(title, title_rect)
 
         # Draw score and stats - calculate spacing to fit between title and buttons
-        available_space = self.button_rects[0].top - (title_rect.bottom + 20)  # Space between title and first button
-        
+        available_space = self.button_rects[0].top - (
+            title_rect.bottom + 20
+        )  # Space between title and first button
+
         # Divide the available space evenly
         num_stat_lines = 5  # Score, high score, and 3 stat lines
         line_spacing = available_space / (num_stat_lines + 1)  # +1 for extra padding
-        
+
         # Start position for stats (after title with some padding)
         y_position = title_rect.bottom + line_spacing
 
@@ -251,17 +267,21 @@ class GameOverScene(Scene):
 
         # Get button text color from config
         button_text_color = config.get("ui", "game_over", "buttons", "text_color", default="white")
-        
+
         # Draw menu options as buttons
         for i, option in enumerate(self.menu_options):
             # Choose button image based on selection
-            button_img = self.scaled_button_hover if i == self.selected_option else self.scaled_button_normal
-            
+            button_img = (
+                self.scaled_button_hover if i == self.selected_option else self.scaled_button_normal
+            )
+
             # Draw the button
             button_rect = self.button_rects[i]
             self.screen.blit(button_img, button_rect)
-            
+
             # Draw the button text
-            text = self.button_font.render(option["text"], True, config.get_color(button_text_color))
+            text = self.button_font.render(
+                option["text"], True, config.get_color(button_text_color)
+            )
             text_rect = text.get_rect(center=button_rect.center)
             self.screen.blit(text, text_rect)

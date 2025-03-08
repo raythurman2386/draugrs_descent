@@ -178,10 +178,14 @@ class AssetManager:
             theme = "blue"
 
         sheet_name = self.UI_THEMES[theme]
-        
+
         # Convert forward slashes to backslashes for Windows paths
-        sheet_path = os.path.normpath(os.path.join(self.INTERFACE_PATH, "Spritesheet", f"{sheet_name}.png"))
-        xml_path = os.path.normpath(os.path.join(self.INTERFACE_PATH, "Spritesheet", f"{sheet_name}.xml"))
+        sheet_path = os.path.normpath(
+            os.path.join(self.INTERFACE_PATH, "Spritesheet", f"{sheet_name}.png")
+        )
+        xml_path = os.path.normpath(
+            os.path.join(self.INTERFACE_PATH, "Spritesheet", f"{sheet_name}.xml")
+        )
 
         # Check if already loaded
         if sheet_name in self.spritesheets:
@@ -194,7 +198,7 @@ class AssetManager:
                 if pygame.display.get_surface() is None:
                     # Create a small display if none exists (for unit testing)
                     pygame.display.set_mode((1, 1), pygame.NOFRAME)
-                
+
                 spritesheet = pygame.image.load(sheet_path).convert_alpha()
                 self.spritesheets[sheet_name] = spritesheet
                 logger.debug(f"Loaded spritesheet: {sheet_path}")
@@ -224,11 +228,11 @@ class AssetManager:
         try:
             tree = ET.parse(xml_path)
             root = tree.getroot()
-            
+
             # Initialize dictionary for this spritesheet if it doesn't exist
             if sheet_name not in self.spritesheet_data:
                 self.spritesheet_data[sheet_name] = {}
-            
+
             # Parse each SubTexture element
             for subtexture in root.findall(".//SubTexture"):
                 name = subtexture.get("name")
@@ -236,15 +240,15 @@ class AssetManager:
                 y = int(subtexture.get("y"))
                 width = int(subtexture.get("width"))
                 height = int(subtexture.get("height"))
-                
+
                 # Store sprite data
                 self.spritesheet_data[sheet_name][name] = {
                     "x": x,
                     "y": y,
                     "width": width,
-                    "height": height
+                    "height": height,
                 }
-            
+
             logger.debug(f"Parsed {len(self.spritesheet_data[sheet_name])} sprites from {xml_path}")
         except Exception as e:
             logger.error(f"Error parsing spritesheet XML {xml_path}: {e}")
@@ -263,42 +267,46 @@ class AssetManager:
         if theme not in self.UI_THEMES:
             logger.warning(f"UI theme '{theme}' not found, using blue theme")
             theme = "blue"
-            
+
         sheet_name = self.UI_THEMES[theme]
-        
+
         # Check if we need to load the spritesheet
         if sheet_name not in self.spritesheets:
             if self.load_spritesheet(theme) is None:
                 return None
-            
+
         # Check if we have data for this element
-        if (sheet_name not in self.spritesheet_data or 
-            element_name not in self.spritesheet_data[sheet_name]):
+        if (
+            sheet_name not in self.spritesheet_data
+            or element_name not in self.spritesheet_data[sheet_name]
+        ):
             logger.warning(f"UI element '{element_name}' not found in theme '{theme}'")
             return None
-            
+
         # Generate a key for the cached element
         element_key = f"{sheet_name}_{element_name}"
-        
+
         # Check if we already extracted this element
         if element_key in self.ui_elements:
             return self.ui_elements[element_key]
-            
+
         # Extract the element from the spritesheet
         sprite_data = self.spritesheet_data[sheet_name][element_name]
         spritesheet = self.spritesheets[sheet_name]
-        
+
         # Create a new surface for the element
         element = pygame.Surface((sprite_data["width"], sprite_data["height"]), pygame.SRCALPHA)
-        
+
         # Copy the element from the spritesheet
-        element.blit(spritesheet, (0, 0), 
-                    (sprite_data["x"], sprite_data["y"], 
-                     sprite_data["width"], sprite_data["height"]))
-                     
+        element.blit(
+            spritesheet,
+            (0, 0),
+            (sprite_data["x"], sprite_data["y"], sprite_data["width"], sprite_data["height"]),
+        )
+
         # Cache the element
         self.ui_elements[element_key] = element
-        
+
         return element
 
     def load_scribble_tileset(self, filename, directory="Tilesheet"):
@@ -313,16 +321,16 @@ class AssetManager:
             A pygame Surface with the tileset
         """
         path = os.path.normpath(os.path.join(self.SCRIBBLE_DUNGEONS_PATH, directory, filename))
-        
+
         # Check if already loaded
         if path in self.images:
             return self.images[path]
-            
+
         try:
             if os.path.exists(path):
                 # Load the tileset
                 tileset = pygame.image.load(path).convert_alpha()
-                
+
                 # Cache the tileset
                 self.images[path] = tileset
                 logger.debug(f"Loaded scribble tileset: {path}")
@@ -337,13 +345,13 @@ class AssetManager:
     def preload_ui_assets(self, themes=None):
         """
         Preload all UI assets from the specified themes.
-        
+
         Args:
             themes: List of themes to preload (if None, preloads all themes)
         """
         if themes is None:
             themes = list(self.UI_THEMES.keys())
-            
+
         for theme in themes:
             if theme in self.UI_THEMES:
                 logger.info(f"Preloading UI assets for theme: {theme}")
@@ -354,12 +362,12 @@ class AssetManager:
     def get_svg_ui_element(self, element_name, theme="blue", scale=None):
         """
         Load an SVG UI element from the Vector directory.
-        
+
         Args:
             element_name: Name of the SVG element (e.g., 'slide_horizontal_color')
             theme: Color theme (blue, green, grey, red, yellow)
             scale: Optional (width, height) tuple to scale the SVG
-            
+
         Returns:
             A pygame Surface with the loaded SVG element
         """
@@ -369,111 +377,151 @@ class AssetManager:
         if theme not in valid_themes:
             logger.warning(f"SVG UI theme '{theme}' not found, using Blue theme")
             theme = "Blue"
-            
+
         # Construct the SVG path
-        svg_path = os.path.normpath(os.path.join(self.INTERFACE_PATH, "Vector", theme, f"{element_name}.svg"))
-        
+        svg_path = os.path.normpath(
+            os.path.join(self.INTERFACE_PATH, "Vector", theme, f"{element_name}.svg")
+        )
+
         # Generate a unique key for the cached element
         element_key = f"svg_{theme}_{element_name}"
         if scale:
             element_key += f"_{scale[0]}x{scale[1]}"
-        
+
         # Check if we already loaded this element
         if element_key in self.ui_elements:
             return self.ui_elements[element_key]
-            
+
         try:
-            if os.path.exists(svg_path):
-                logger.debug(f"Loading SVG UI element: {svg_path}")
-                
-                # For SVG files, we need to use an external library or Pygame's built-in svg support
-                # in newer versions. Here we'll use a basic approach that works with Pygame.
-                try:
-                    # Try to use pygame's built-in SVG support (Pygame 2.x+)
-                    if hasattr(pygame, 'svg') and hasattr(pygame.svg, 'load_svg'):
-                        svg_surface = pygame.svg.load_svg(svg_path)
-                    elif scale:
-                        # Fallback: render SVG using cairosvg if available
-                        try:
-                            import io
-                            import cairosvg
-                            
-                            # Convert SVG to PNG in memory
-                            png_data = cairosvg.svg2png(url=svg_path, 
-                                                       output_width=scale[0], 
-                                                       output_height=scale[1])
-                            
-                            # Load the PNG data into a Pygame surface
-                            png_file = io.BytesIO(png_data)
-                            svg_surface = pygame.image.load(png_file)
-                        except ImportError:
-                            logger.warning("cairosvg not available for SVG conversion. Using basic approach.")
-                            # Very basic fallback - create a colored rectangle placeholder
-                            if scale:
-                                svg_surface = pygame.Surface(scale, pygame.SRCALPHA)
-                            else:
-                                svg_surface = pygame.Surface((100, 50), pygame.SRCALPHA)
-                            
-                            # Use a color based on the theme
-                            theme_colors = {
-                                "Blue": (66, 148, 255, 255),
-                                "Green": (113, 201, 55, 255),
-                                "Grey": (180, 180, 180, 255),
-                                "Red": (255, 97, 87, 255),
-                                "Yellow": (245, 230, 83, 255)
-                            }
-                            color = theme_colors.get(theme, (100, 100, 100, 255))
-                            
-                            # Fill with theme color
-                            svg_surface.fill(color)
-                    else:
-                        # No scale specified and no SVG support
-                        logger.warning("No SVG support available and no scale specified.")
-                        svg_surface = pygame.Surface((100, 50), pygame.SRCALPHA)
-                        svg_surface.fill((200, 200, 200, 255))
-                        
-                    # Scale if needed
-                    if scale and hasattr(pygame, 'svg') and hasattr(pygame.svg, 'load_svg'):
-                        svg_surface = pygame.transform.smoothscale(svg_surface, scale)
-                        
-                    # Cache the element
-                    self.ui_elements[element_key] = svg_surface
-                    return svg_surface
-                    
-                except Exception as e:
-                    logger.error(f"Error loading SVG file {svg_path}: {e}")
-                    
-                    # Create a placeholder for the failed SVG
-                    if scale:
-                        placeholder = pygame.Surface(scale, pygame.SRCALPHA)
-                    else:
-                        placeholder = pygame.Surface((100, 50), pygame.SRCALPHA)
-                    
-                    placeholder.fill((255, 0, 255, 128))  # Magenta for error indication
-                    return placeholder
-            else:
-                logger.warning(f"SVG UI element not found: {svg_path}")
-                
-                # Create a placeholder for the missing SVG
+            if not os.path.exists(svg_path):
+                logger.warning(f"SVG file not found: {svg_path}")
+                # Return an empty surface
+                surface = pygame.Surface((10, 10), pygame.SRCALPHA)
+                surface.fill((255, 0, 255, 128))  # Purple semi-transparent fill for missing assets
                 if scale:
-                    placeholder = pygame.Surface(scale, pygame.SRCALPHA)
-                else:
-                    placeholder = pygame.Surface((100, 50), pygame.SRCALPHA)
-                
-                placeholder.fill((255, 0, 0, 128))  # Red for missing files
-                return placeholder
-                
-        except Exception as e:
-            logger.error(f"Error processing SVG UI element {element_name}: {e}")
-            
-            # Create a placeholder for error cases
+                    surface = pygame.transform.scale(surface, scale)
+                self.ui_elements[element_key] = surface
+                return surface
+
+            # Parse the SVG to extract dimensions and data
+            tree = ET.parse(svg_path)
+            root = tree.getroot()
+
+            # Get SVG dimensions
+            width = int(float(root.get("width", "100")))
+            height = int(float(root.get("height", "100")))
+
+            # Create a surface
             if scale:
-                placeholder = pygame.Surface(scale, pygame.SRCALPHA)
+                width, height = scale
+
+            # Create a surface with transparency
+            surface = pygame.Surface((width, height), pygame.SRCALPHA)
+
+            # For simple SVGs (like Kenny's UI elements), we can extract the path data
+            # and render it as a filled rectangle or polygon, but that's complex
+            # Instead, for this implementation, we'll just fill the surface with the theme color
+
+            # Map theme to color
+            theme_colors = {
+                "Blue": (0, 112, 224, 255),  # Blue
+                "Green": (0, 204, 94, 255),  # Green
+                "Grey": (128, 128, 128, 255),  # Grey
+                "Red": (204, 51, 63, 255),  # Red
+                "Yellow": (244, 180, 27, 255),  # Yellow
+            }
+
+            color = theme_colors.get(theme, (0, 112, 224, 255))  # Default to blue
+
+            # Fill the surface with the theme color (with transparency)
+            surface.fill(color)
+
+            # Cache and return the element
+            self.ui_elements[element_key] = surface
+            return surface
+
+        except Exception as e:
+            logger.error(f"Error loading SVG element: {e}")
+            # Return an empty surface on error
+            surface = pygame.Surface((10, 10), pygame.SRCALPHA)
+            surface.fill((255, 0, 0, 128))  # Red semi-transparent fill for error
+            if scale:
+                surface = pygame.transform.scale(surface, scale)
+            self.ui_elements[element_key] = surface
+            return surface
+
+    def get_character_sprite(self, color, width=None, height=None):
+        """
+        Load a character sprite from the scribble_dungeons assets.
+
+        Args:
+            color: Color of the character (green, purple, red, yellow)
+            width: Width to scale the sprite to (optional)
+            height: Height to scale the sprite to (optional)
+
+        Returns:
+            A pygame Surface with the character sprite
+        """
+        # Validate color
+        valid_colors = ["green", "purple", "red", "yellow"]
+        if color not in valid_colors:
+            logger.warning(f"Invalid character color '{color}', using 'green' instead")
+            color = "green"
+
+        # Generate a unique key for the cached image
+        image_key = f"character_{color}"
+        if width and height:
+            image_key += f"_{width}x{height}"
+
+        # Check if we already loaded this character
+        if image_key in self.images:
+            return self.images[image_key]
+
+        try:
+            # Construct the image path
+            character_path = os.path.join(
+                self.SCRIBBLE_DUNGEONS_PATH, "characters", f"{color}_character.png"
+            )
+
+            if not os.path.exists(character_path):
+                logger.warning(f"Character sprite not found: {character_path}")
+
+                # Create a colored rectangle as a fallback
+                surface = pygame.Surface((width or 50, height or 50), pygame.SRCALPHA)
+
+                # Map color names to RGB values
+                color_map = {
+                    "green": (0, 204, 0),
+                    "purple": (155, 0, 255),
+                    "red": (255, 0, 0),
+                    "yellow": (255, 255, 0),
+                }
+
+                rgb_color = color_map.get(color, (0, 204, 0))  # Default to green
+                surface.fill(rgb_color)
             else:
-                placeholder = pygame.Surface((100, 50), pygame.SRCALPHA)
-            
-            placeholder.fill((255, 255, 0, 128))  # Yellow for general errors
-            return placeholder
+                # Load the image
+                surface = pygame.image.load(character_path).convert_alpha()
+
+                # Scale if dimensions provided
+                if width and height:
+                    surface = pygame.transform.scale(surface, (width, height))
+
+            # Cache and return the image
+            self.images[image_key] = surface
+            return surface
+
+        except Exception as e:
+            logger.error(f"Error loading character sprite: {e}")
+
+            # Create a fallback colored rectangle on error
+            surface = pygame.Surface((width or 50, height or 50), pygame.SRCALPHA)
+            surface.fill((255, 0, 255))  # Purple for errors
+
+            # Cache and return the fallback image
+            self.images[image_key] = surface
+            return surface
+
 
 # Create a global instance of the asset manager
 game_asset_manager = AssetManager()

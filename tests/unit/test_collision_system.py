@@ -28,6 +28,13 @@ class MockSprite(pygame.sprite.Sprite):
         self.is_enemy_projectile = is_enemy_projectile
         self.active = True
 
+        # Create a simple surface for the sprite
+        self.image = pygame.Surface((width, height))
+        self.image.fill((255, 0, 0))  # Fill with red for visibility
+
+        # Create a mask for pixel-perfect collision detection
+        self.mask = pygame.mask.from_surface(self.image)
+
     def kill(self):
         """Mock kill method."""
         self.alive = False

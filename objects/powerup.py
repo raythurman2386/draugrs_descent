@@ -57,12 +57,16 @@ class Powerup(pygame.sprite.Sprite):
         current_width = self.base_size[0] + pulse_offset
         current_height = self.base_size[1] + pulse_offset
 
-        # Create the surface
-        self.image = pygame.Surface((int(current_width), int(current_height)))
-        color = config.get(
-            "powerups", "colors", self.type, default=(255, 255, 255)
-        )  # Default to white if type not found
-        self.image.fill(color)
+        # Create the surface with alpha channel for transparency
+        self.image = pygame.Surface((int(current_width), int(current_height)), pygame.SRCALPHA)
+
+        # Get color for this powerup type
+        color = config.get("powerups", "colors", self.type, default=(255, 255, 255))
+
+        # Draw the powerup as a circle with the type-specific color
+        radius = min(int(current_width), int(current_height)) // 2
+        center = (int(current_width // 2), int(current_height // 2))
+        pygame.draw.circle(self.image, color, center, radius)
 
         # Add a visual indicator for the powerup type
         if self.type == "health":
@@ -100,7 +104,10 @@ class Powerup(pygame.sprite.Sprite):
                     int(current_height * 3 / 4),
                 ),  # Bottom left
             ]
-            pygame.draw.lines(self.image, (255, 255, 255), False, points, 2)
+            pygame.draw.polygon(self.image, (255, 255, 255), points)
+
+        # Create mask for pixel-perfect collision detection
+        self.mask = pygame.mask.from_surface(self.image)
 
     def apply_effect(self, player):
         """Apply the powerup effect to the player.

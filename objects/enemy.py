@@ -1,7 +1,8 @@
 import pygame
 import math
 import random
-from managers import config
+import os
+from managers import config, game_asset_manager
 from utils.logger import GameLogger
 from objects.projectile import Projectile
 
@@ -31,9 +32,23 @@ class Enemy(pygame.sprite.Sprite):
         width = config.get("enemy", "dimensions", "width", default=30)
         height = config.get("enemy", "dimensions", "height", default=30)
 
-        self.image = pygame.Surface((width, height))
-        self.image.fill(config.get_color("red"))
+        # Get enemy color based on type
+        if enemy_type == self.TYPE_BASIC:
+            color = config.get("enemy", "appearance", "basic", "color", default="purple")
+        elif enemy_type == self.TYPE_RANGED:
+            color = config.get("enemy", "appearance", "ranged", "color", default="red")
+        elif enemy_type == self.TYPE_CHARGER:
+            color = config.get("enemy", "appearance", "charger", "color", default="yellow")
+        else:
+            color = "purple"  # Default fallback
+
+        # Load character sprite using the asset manager
+        self.image = game_asset_manager.get_character_sprite(color, width, height)
         self.rect = self.image.get_rect()
+
+        # Generate a mask for pixel-perfect collision detection
+        self.mask = pygame.mask.from_surface(self.image)
+
         self.rect.x = position[0]  # Set initial x position
         self.rect.y = position[1]  # Set initial y position
         self.position = [float(position[0]), float(position[1])]  # Store exact position
@@ -45,6 +60,13 @@ class Enemy(pygame.sprite.Sprite):
         self.speed = config.get("enemy", "attributes", "speed", default=5)  # Higher base speed
         self.collision_cooldown = 1000
         self.last_collision_time = 0
+
+        # Visual effect properties
+        self.last_hit_time = 0
+        self.hit_flash_duration = 200  # Duration of the red flash effect in milliseconds
+
+        # Store original image for visual effects
+        self.original_image = self.image.copy()
 
         logger.debug(f"Enemy {self.id} of type {self.enemy_type} created at {position}")
 
@@ -87,6 +109,46 @@ class Enemy(pygame.sprite.Sprite):
         if player_position:
             self.move_towards(player_position)
 
+        # Apply visual effects
+        self.apply_visual_effects()
+
+    def apply_visual_effects(self):
+        """Apply current visual effects to the enemy."""
+        # First restore the original image
+        self.image = self.original_image.copy()
+
+        # Check for fade effect
+        current_time = pygame.time.get_ticks()
+        if current_time - self.last_hit_time < self.hit_flash_duration:
+            # Apply red flash effect
+            overlay = pygame.Surface(self.image.get_size(), pygame.SRCALPHA)
+            overlay.fill((255, 0, 0, 100))  # Red with 100 alpha
+            self.image.blit(overlay, (0, 0))
+
+        # Update the mask for the modified image
+        self.mask = pygame.mask.from_surface(self.image)
+
+    def flash_red(self):
+        """Make the enemy flash red to indicate damage."""
+        # Set the last hit time to the current time
+        self.last_hit_time = pygame.time.get_ticks()
+
+        # Create a copy of the original image
+        flash_image = self.original_image.copy()
+
+        # Create a red overlay with transparency
+        overlay = pygame.Surface(flash_image.get_size(), pygame.SRCALPHA)
+        overlay.fill((255, 0, 0, 100))  # Red with 100 alpha
+
+        # Apply the overlay
+        flash_image.blit(overlay, (0, 0))
+
+        # Set the image to the flashed version
+        self.image = flash_image
+
+        # Update the mask for the modified image
+        self.mask = pygame.mask.from_surface(self.image)
+
     def take_damage(self, amount):
         """
         Apply damage to the enemy.
@@ -102,6 +164,9 @@ class Enemy(pygame.sprite.Sprite):
             f"Enemy {self.id} took {amount} damage. Health: {self.health}/{self.max_health}"
         )
 
+        # Flash red briefly when taking damage
+        self.flash_red()
+
         if self.health <= 0:
             self.kill()
             logger.debug(f"Enemy {self.id} died")
@@ -114,9 +179,6 @@ class RangedEnemy(Enemy):
 
     def __init__(self, position):
         super().__init__(position, Enemy.TYPE_RANGED)
-
-        # Override color to distinguish from other enemies
-        self.image.fill(config.get_color("blue"))
 
         # Ranged enemy specific attributes
         self.preferred_distance = config.get("enemy", "ranged", "preferred_distance", default=200)
@@ -167,6 +229,9 @@ class RangedEnemy(Enemy):
             self.shoot_at_player(player_position, projectile_group, all_sprites)
             self.last_shot_time = current_time
 
+        # Apply visual effects
+        super().apply_visual_effects()
+
     def shoot_at_player(self, player_position, projectile_group, all_sprites):
         """Shoot a projectile at the player."""
         # Calculate direction to player
@@ -201,9 +266,6 @@ class ChargerEnemy(Enemy):
 
     def __init__(self, position):
         super().__init__(position, Enemy.TYPE_CHARGER)
-
-        # Override color to distinguish from other enemies
-        self.image.fill(config.get_color("yellow"))
 
         # Charger enemy specific attributes
         self.charge_distance = config.get("enemy", "charger", "charge_distance", default=150)
@@ -255,6 +317,9 @@ class ChargerEnemy(Enemy):
                 self.position[1] += self.charge_direction[1] * self.speed
                 self.rect.x = round(self.position[0])
                 self.rect.y = round(self.position[1])
+
+                # Apply visual effects
+                super().apply_visual_effects()
                 return
 
         # Always move initially, then check for charge
@@ -265,6 +330,9 @@ class ChargerEnemy(Enemy):
             self.start_charge(player_position, current_time)
         else:
             super().move_towards(player_position)
+
+        # Apply visual effects
+        super().apply_visual_effects()
 
     def start_charge(self, player_position, current_time):
         """Start a charge attack toward the player's position."""

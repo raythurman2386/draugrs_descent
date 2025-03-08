@@ -29,8 +29,8 @@ mechanics:
 # Player Settings
 player:
   dimensions:
-    width: 50
-    height: 50
+    width: 60
+    height: 60
   start_position:
     x: 400
     y: 300
@@ -39,16 +39,25 @@ player:
     movement_speed: 5
     shot_cooldown: 500  # milliseconds
     invincibility_duration: 300  # milliseconds
+  appearance:
+    color: "green"  # Options: green, purple, red, yellow - matches scribble_dungeons characters
 
 # Enemy Settings
 enemy:
   dimensions:
-    width: 30
-    height: 30
+    width: 45
+    height: 45
   attributes:
     max_health: 20
     damage: 10
     speed: 2
+  appearance:
+    basic:
+      color: "purple"  # Basic enemies will use purple character sprite
+    ranged:
+      color: "red"  # Ranged enemies will use red character sprite
+    charger:
+      color: "yellow"  # Charger enemies will use yellow character sprite
   # New enemy type settings
   ranged:
     preferred_distance: 200
