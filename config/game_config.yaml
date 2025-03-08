@@ -14,6 +14,7 @@ colors:
   blue: [0, 0, 255]
   yellow: [255, 255, 0]
   purple: [255, 0, 255]
+  dark_blue: [20, 30, 50]  # Added for menu background
 
 # Game Mechanics
 mechanics:
@@ -79,9 +80,126 @@ projectile:
 
 # UI Elements
 ui:
+  # General UI settings
+  default_theme: "blue"  # Default UI theme color
+  available_themes: ["blue", "green", "grey", "red", "yellow"]
+  
+  # Health bar settings  
   health_bar:
     width: 200
     height: 20
+    border_color: "black"
+    fill_color: "green"
+    background_color: "red"
+    
+  # Main menu settings
+  main_menu:
+    background_color: "dark_blue"  # Reference to colors section
+    panel:
+      width_ratio: 0.4  # Percentage of screen width
+      height_ratio: 0.4  # Percentage of screen height
+    title:
+      font_size: 36
+      color: "white"
+      y_offset: -40  # Pixels above panel top
+    buttons:
+      width_ratio: 0.7  # Percentage of panel width
+      height: 45
+      spacing: 60
+      start_y_offset: 60
+      text_color: "white"
+      font_size: 24
+  
+  # Pause menu settings
+  pause_menu:
+    overlay_color: [0, 0, 0, 128]  # RGBA with alpha for transparency
+    panel:
+      width_ratio: 0.4
+      height_ratio: 0.6
+    title:
+      font_size: 32
+      color: "white"
+    buttons:
+      width_ratio: 0.7
+      height: 45
+      spacing: 50
+      text_color: "white"
+      font_size: 20
+  
+  # Options menu settings
+  options_menu:
+    overlay_color: [0, 0, 0, 200]  # RGBA with alpha for transparency
+    panel:
+      width_ratio: 0.7
+      height_ratio: 0.7
+    title:
+      font_size: 32
+      color: "white"
+    buttons:
+      width_ratio: 0.7
+      height: 45
+      spacing: 60
+      text_color: "white"
+      font_size: 20
+    sections:
+      audio:
+        title: "Audio"
+        font_size: 24
+      display:
+        title: "Display"
+        font_size: 24
+      controls:
+        title: "Controls"
+        font_size: 24
+    sliders:
+      width: 200
+      height: 20
+      knob_size: 30
+      text_color: "white"
+      track_color: "blue"  # Color theme for slider tracks
+      knob_color: "blue"   # Color theme for slider knobs
+  
+  # Game HUD settings
+  game_hud:
+    score:
+      position_x: 20
+      position_y: 20
+      font_size: 24
+      color: "white"
+    health:
+      position_x: 20
+      position_y: 50
+      font_size: 20
+      color: "white"
+    powerups:
+      position_x: 650
+      position_y: 20
+      icon_size: 30
+      spacing: 10
+    wave_announcement:
+      font_size: 40
+      color: "yellow"
+      duration: 3000  # milliseconds
+
+  # Game Over Menu UI Settings
+  game_over:
+    background_color: black
+    panel:
+      width_ratio: 0.5
+      height_ratio: 0.7
+    title:
+      font_size: 48
+      color: red
+    stats:
+      font_size: 22
+      text_color: white
+      score_color: yellow
+    buttons:
+      width_ratio: 0.6
+      height: 45
+      spacing: 60
+      font_size: 24
+      text_color: white
 
 # Powerup Settings
 powerups:
@@ -128,3 +246,11 @@ assets:
   fonts:
     path: "assets/fonts"
     main: "main_font.ttf"
+    sizes:
+      title: 36
+      button: 24
+      small: 18
+      large: 32
+  interface:
+    path: "assets/interface"
+    spritesheet_path: "Spritesheet"
