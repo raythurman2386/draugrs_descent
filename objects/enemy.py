@@ -61,12 +61,14 @@ class Enemy(pygame.sprite.Sprite):
         self.collision_cooldown = 1000
         self.last_collision_time = 0
 
-        # Visual effect properties
-        self.last_hit_time = 0
-        self.hit_flash_duration = 200  # Duration of the red flash effect in milliseconds
-
-        # Store original image for visual effects
+        # Store original image for reverting after effects
         self.original_image = self.image.copy()
+
+        # Flash effect properties
+        self.flash_effect = False
+        self.flash_timer = 0
+        self.flash_duration = config.get("enemy", "effects", "flash_duration", default=200)
+        self.flash_color = (255, 0, 0)  # Default to red
 
         logger.debug(f"Enemy {self.id} of type {self.enemy_type} created at {position}")
 
@@ -109,45 +111,51 @@ class Enemy(pygame.sprite.Sprite):
         if player_position:
             self.move_towards(player_position)
 
-        # Apply visual effects
+        # Apply any visual effects
         self.apply_visual_effects()
 
     def apply_visual_effects(self):
-        """Apply current visual effects to the enemy."""
-        # First restore the original image
-        self.image = self.original_image.copy()
+        """Apply visual effects like flashing to the enemy sprite."""
+        update_mask = False
 
-        # Check for fade effect
-        current_time = pygame.time.get_ticks()
-        if current_time - self.last_hit_time < self.hit_flash_duration:
-            # Apply red flash effect
-            overlay = pygame.Surface(self.image.get_size(), pygame.SRCALPHA)
-            overlay.fill((255, 0, 0, 100))  # Red with 100 alpha
-            self.image.blit(overlay, (0, 0))
+        if self.flash_effect:
+            current_time = pygame.time.get_ticks()
+            if current_time - self.flash_timer > self.flash_duration:
+                self.flash_effect = False
+                # Restore original image when flash effect ends
+                self.image = self.original_image.copy()
+                update_mask = True
+            else:
+                # Flash between original image and colored overlay
+                flash_interval = 50  # milliseconds
+                if (current_time // flash_interval) % 2 == 0:
+                    self.image = self.original_image.copy()
+                else:
+                    # Create a colored overlay using mask for pixel-perfect effect
+                    overlay = pygame.Surface(self.image.get_size(), pygame.SRCALPHA)
+                    flash_color_with_alpha = self.flash_color + (150,)  # Add 150 alpha
+                    overlay.fill(flash_color_with_alpha)
 
-        # Update the mask for the modified image
-        self.mask = pygame.mask.from_surface(self.image)
+                    # Apply the overlay only to non-transparent pixels
+                    temp_image = self.original_image.copy()
+                    temp_image.blit(overlay, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+                    self.image = temp_image
+                update_mask = True
+
+        # Update the mask if the image has changed
+        if update_mask:
+            self.mask = pygame.mask.from_surface(self.image)
 
     def flash_red(self):
-        """Make the enemy flash red to indicate damage."""
-        # Set the last hit time to the current time
-        self.last_hit_time = pygame.time.get_ticks()
+        """Legacy method - calls start_flash_effect with red color for backward compatibility."""
+        self.start_flash_effect((255, 0, 0))
 
-        # Create a copy of the original image
-        flash_image = self.original_image.copy()
-
-        # Create a red overlay with transparency
-        overlay = pygame.Surface(flash_image.get_size(), pygame.SRCALPHA)
-        overlay.fill((255, 0, 0, 100))  # Red with 100 alpha
-
-        # Apply the overlay
-        flash_image.blit(overlay, (0, 0))
-
-        # Set the image to the flashed version
-        self.image = flash_image
-
-        # Update the mask for the modified image
-        self.mask = pygame.mask.from_surface(self.image)
+    def start_flash_effect(self, color):
+        """Start a flash effect with the given color."""
+        self.flash_effect = True
+        self.flash_timer = pygame.time.get_ticks()
+        self.flash_color = color
+        logger.debug(f"Enemy {self.id} started flash effect with color {color}")
 
     def take_damage(self, amount):
         """
@@ -240,14 +248,18 @@ class RangedEnemy(Enemy):
 
         # Normalize direction
         distance = max(1, math.sqrt(dx**2 + dy**2))
-        dx = dx / distance * self.projectile_speed
-        dy = dy / distance * self.projectile_speed
+        normalized_dx = dx / distance
+        normalized_dy = dy / distance
+
+        # Set velocity based on normalized direction and speed
+        velocity_dx = normalized_dx * self.projectile_speed
+        velocity_dy = normalized_dy * self.projectile_speed
 
         # Create projectile - start from edge of enemy sprite, not center
         # This helps prevent immediate self-collisions
         start_pos = (
-            self.rect.centerx + (dx / self.projectile_speed) * self.rect.width * 0.6,
-            self.rect.centery + (dy / self.projectile_speed) * self.rect.height * 0.6,
+            self.rect.centerx + normalized_dx * self.rect.width * 0.6,
+            self.rect.centery + normalized_dy * self.rect.height * 0.6,
         )
 
         # Pass map dimensions to the projectile if we have them
@@ -256,7 +268,7 @@ class RangedEnemy(Enemy):
 
         projectile = Projectile(
             start_pos,
-            (dx, dy),
+            (velocity_dx, velocity_dy),
             damage=self.projectile_damage,
             is_enemy_projectile=True,
             map_width=map_width,
@@ -267,7 +279,9 @@ class RangedEnemy(Enemy):
         projectile_group.add(projectile)
         all_sprites.add(projectile)
 
-        logger.debug(f"Ranged Enemy {self.id} fired projectile at player with velocity {(dx, dy)}")
+        logger.debug(
+            f"Ranged Enemy {self.id} fired projectile at player with velocity {(velocity_dx, velocity_dy)}"
+        )
 
         return projectile
 

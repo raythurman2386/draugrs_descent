@@ -34,7 +34,7 @@ def handle_player_powerup_collision(player, powerup):
     logger.debug(f"Player collided with {powerup.type} Powerup {powerup.id}")
 
     # Trigger visual effect with the powerup's color
-    if hasattr(player, "start_flash_effect"):
+    if hasattr(player, "apply_visual_effects"):
         # Get the color for the visual effect from config - using lazy import
         from managers import config
 

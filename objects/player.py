@@ -3,6 +3,7 @@ import math
 from utils import find_closest_enemy, GameLogger
 from .projectile import Projectile
 from managers import config, game_asset_manager
+import random
 
 # Get a logger for the player module
 logger = GameLogger.get_logger("player")
@@ -11,6 +12,7 @@ logger = GameLogger.get_logger("player")
 class Player(pygame.sprite.Sprite):
     def __init__(self, position=None):
         super().__init__()
+
         # Get player dimensions from config
         width = config.get("player", "dimensions", "width", default=50)
         height = config.get("player", "dimensions", "height", default=50)
@@ -38,14 +40,21 @@ class Player(pygame.sprite.Sprite):
         self.invincible_duration = config.get(
             "player", "attributes", "invincibility_duration", default=1000
         )
+
+        # Set up shot cooldown - explicitly log the config value
+        config_shot_cooldown = config.get("player", "attributes", "shot_cooldown", default=500)
+        logger.info(f"Player initialized with shot cooldown from config: {config_shot_cooldown}ms")
         self.last_shot_time = 0
-        self.shot_cooldown = config.get("player", "attributes", "shot_cooldown", default=500)
+        self.shot_cooldown = config_shot_cooldown
+
+        # Store the base cooldown for reference and restoration after powerups
+        self.base_shot_cooldown = config_shot_cooldown
+        logger.debug(f"Base shot cooldown set to: {self.base_shot_cooldown}ms")
 
         # Weapon boost properties
         self.weapon_boost_active = False
         self.weapon_boost_timer = 0
         self.weapon_boost_duration = 0
-        self.base_shot_cooldown = config.get("player", "attributes", "shot_cooldown", default=500)
 
         # Visual effect properties
         self.flash_effect = False
@@ -85,12 +94,14 @@ class Player(pygame.sprite.Sprite):
                 if (current_time // flash_interval) % 2 == 0:
                     self.image = self.original_image.copy()
                 else:
-                    # Create a colored overlay
+                    # Create a colored overlay using mask for pixel-perfect effect
                     overlay = pygame.Surface(self.image.get_size(), pygame.SRCALPHA)
                     flash_color_with_alpha = self.flash_color + (150,)  # Add 150 alpha
                     overlay.fill(flash_color_with_alpha)
+
+                    # Apply the overlay only to non-transparent pixels
                     temp_image = self.original_image.copy()
-                    temp_image.blit(overlay, (0, 0))
+                    temp_image.blit(overlay, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
                     self.image = temp_image
                 update_mask = True
 
@@ -130,20 +141,30 @@ class Player(pygame.sprite.Sprite):
         if self.map_width and self.map_height:
             self.rect.clamp_ip((0, 0, self.map_width, self.map_height))
 
-        # Handle shooting only when moving
+        # Handle shooting only when moving and cooldown has passed
         current_time = pygame.time.get_ticks()
-        if moving and current_time - self.last_shot_time > self.shot_cooldown:
-            logger.debug(f"Attempting to shoot at {current_time}")
+        time_since_last_shot = current_time - self.last_shot_time
+
+        # Ensure cooldown is always at least minimum value to prevent rapid firing
+        if self.shot_cooldown < 100:
+            logger.warning(
+                f"Shot cooldown too low: {self.shot_cooldown}ms, resetting to base value"
+            )
+            self.shot_cooldown = self.base_shot_cooldown
+
+        if moving and time_since_last_shot >= self.shot_cooldown:
             projectile = self.shoot()
             if projectile:
-                logger.debug(f"Projectile created: {projectile}")
+                logger.debug(f"Projectile created with ID: {projectile.id}")
                 logger.debug(f"Projectile velocity: {projectile.velocity}")
-                logger.debug(f"Projectile position: {projectile.rect.center}")
                 # Add projectile to groups unconditionally
                 self.projectile_group.add(projectile)
                 self.all_sprites.add(projectile)
-                logger.debug("Projectile added to groups")
-            self.last_shot_time = current_time
+                # Only update last shot time if we actually created a projectile
+                self.last_shot_time = current_time
+                logger.debug(
+                    f"Shot cooldown: {self.shot_cooldown}ms, next shot available at: {current_time + self.shot_cooldown}"
+                )
 
         # Handle invincibility
         if self.invincible:
@@ -160,11 +181,29 @@ class Player(pygame.sprite.Sprite):
             current_time = pygame.time.get_ticks()
             if current_time - self.weapon_boost_timer > self.weapon_boost_duration:
                 self.weapon_boost_active = False
+                # Reset shot cooldown to base value
                 self.shot_cooldown = self.base_shot_cooldown
-                logger.debug("Weapon boost ended")
+                logger.debug(f"Weapon boost ended, shot cooldown reset to {self.shot_cooldown}ms")
 
     def shoot(self):
         """Find the closest enemy and shoot a projectile at it if within range."""
+        # Log the current cooldown values for debugging
+        current_time = pygame.time.get_ticks()
+        time_since_last_shot = current_time - self.last_shot_time
+        logger.debug(
+            f"Current shot cooldown: {self.shot_cooldown}ms, Base cooldown: {self.base_shot_cooldown}ms"
+        )
+        logger.debug(
+            f"Time since last shot: {time_since_last_shot}ms (Need {self.shot_cooldown}ms to shoot)"
+        )
+
+        # Strict cooldown check - don't shoot if cooldown hasn't passed
+        if time_since_last_shot < self.shot_cooldown:
+            logger.debug(
+                f"Shot refused: Cooldown not met ({time_since_last_shot}ms < {self.shot_cooldown}ms)"
+            )
+            return None
+
         # Find the closest enemy to aim at
         if self.enemy_group:
             logger.debug(f"Enemy group count: {len(self.enemy_group)}")
@@ -196,6 +235,12 @@ class Player(pygame.sprite.Sprite):
 
                     logger.debug(f"Projectile velocity: {velocity}, distance to enemy: {distance}")
                     logger.debug(f"Projectile position: {projectile.rect.center}")
+
+                    # Update last shot time here too, as a double-check
+                    self.last_shot_time = current_time
+                    logger.debug(
+                        f"Shot fired, next shot available at: {current_time + self.shot_cooldown}"
+                    )
 
                     return projectile
                 else:

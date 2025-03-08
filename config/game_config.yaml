@@ -208,6 +208,49 @@ ui:
       font_size: 24
       text_color: white
 
+# Effect settings
+effects:
+  screen_shake:
+    duration: 300   # Duration in milliseconds
+    intensity: 15   # Maximum pixel offset (increased for more noticeable effect)
+
+# Particle Effects
+particles:
+  enabled: true  # Global toggle for particle effects
+  types:
+    hit:  # Projectile hit particles
+      count: 12  # Number of particles per effect
+      min_speed: 2.0
+      max_speed: 4.0
+      min_lifetime: 400  # ms
+      max_lifetime: 800  # ms
+      colors: ["yellow", "orange", "red"]
+      size_range: [4, 8]  # min and max pixel size
+      gravity: 0.1  # Downward acceleration
+      fade_out: true  # Whether particles should fade out over lifetime
+    
+    death:  # Enemy death particles
+      count: 20
+      min_speed: 3.0
+      max_speed: 6.0
+      min_lifetime: 600  # ms
+      max_lifetime: 1200  # ms
+      colors: ["red", "dark_red", "orange"]
+      size_range: [5, 10]  # Larger particles
+      gravity: 0.05
+      fade_out: true
+      
+    powerup:  # Powerup collection particles
+      count: 12
+      min_speed: 1.0
+      max_speed: 3.0
+      min_lifetime: 600  # ms
+      max_lifetime: 900  # ms
+      colors: ["green", "yellow", "blue"]
+      size_range: [2, 4]
+      gravity: -0.05  # Negative gravity makes particles float up
+      fade_out: true
+
 # Powerup Settings
 powerups:
   dimensions:

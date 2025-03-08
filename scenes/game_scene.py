@@ -2,7 +2,7 @@ import pygame
 import random
 
 from .scene import Scene
-from objects import Player, Enemy, Powerup
+from objects import Player, Enemy, Powerup, ParticleSystem
 from objects.enemy import create_enemy
 from utils import (
     CollisionSystem,
@@ -28,6 +28,8 @@ class GameScene(Scene):
         super().__init__()
 
         logger.info("Initializing GameScene")
+
+        self.particle_system = ParticleSystem()
 
         self._initialize_game()
 
@@ -209,19 +211,197 @@ class GameScene(Scene):
             f"{enemy.enemy_type.capitalize()} enemy spawned at {position} (map: {map_width}x{map_height})"
         )
 
+    def pause_game(self):
+        """Pause the game and switch to the pause menu."""
+        if not self.paused:
+            logger.info("Game paused")
+            self.paused = True
+
+            # Stop the game music before switching to pause menu
+            self.sound_manager.stop_music()
+
+            # Change state to PAUSED and switch scene
+            game_state.change_state(GameState.PAUSED)
+            self.switch_to_scene("pause")
+
     def handle_event(self, event):
-        """Handle game-specific events."""
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
-                logger.info("Game paused")
-                self.paused = True
+        """Handle a single game event."""
+        # Check for quit event
+        if event.type == pygame.QUIT:
+            self.should_exit = True
+            return True
 
-                # Stop the game music before switching to pause menu
-                self.sound_manager.stop_music()
+        # Check for pause toggle
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            if not self.paused:
+                self.pause_game()
+                return
 
-                # Change state to PAUSED and switch scene
-                game_state.change_state(GameState.PAUSED)
-                self.switch_to_scene("pause")
+    def _handle_collisions(self):
+        """Check for and handle all collisions."""
+        # Projectiles vs Enemies - using optimized collision system
+        projectile_hits = self.collision_system.check_projectile_enemy_collisions(
+            self.projectile_group, self.enemy_group
+        )
+
+        for projectile, enemies in projectile_hits.items():
+            # Store projectile position before processing hits (it might get killed)
+            projectile_pos = projectile.rect.center
+
+            for enemy in enemies:
+                # Calculate the exact collision point - use the intersection of the masks
+                # For precision, use the direct position to create particles
+                offset_x = enemy.rect.x - projectile.rect.x
+                offset_y = enemy.rect.y - projectile.rect.y
+
+                # Create hit particles at the best available impact position
+                if hasattr(projectile, "mask") and hasattr(enemy, "mask"):
+                    if projectile.mask.overlap(enemy.mask, (offset_x, offset_y)):
+                        overlap_pos = projectile.mask.overlap(enemy.mask, (offset_x, offset_y))
+                        if overlap_pos:
+                            # Convert to world space - this is the exact collision point
+                            impact_x = projectile.rect.x + overlap_pos[0]
+                            impact_y = projectile.rect.y + overlap_pos[1]
+                            self.particle_system.create_particles((impact_x, impact_y), "hit")
+                        else:
+                            # Fallback to projectile position if no specific overlap is found
+                            self.particle_system.create_particles(projectile_pos, "hit")
+                    else:
+                        # No mask overlap but there was a collision - use projectile position
+                        self.particle_system.create_particles(projectile_pos, "hit")
+                else:
+                    # No masks available - use projectile position
+                    self.particle_system.create_particles(projectile_pos, "hit")
+
+                # Use the collision handler function
+                if handle_projectile_enemy_collision(projectile, enemy):
+                    self.play_sound("enemy_hit")
+                    self.handle_enemy_death(enemy)
+                    logger.debug(f"Enemy killed. Total killed: {self.enemies_killed}")
+
+        # Enemy Projectiles vs Player - using optimized collision system
+        if not self.player.invincible:
+            projectile_hits = self.collision_system.check_enemy_projectile_player_collision(
+                self.player, self.projectile_group
+            )
+
+            for projectile in projectile_hits:
+                # Store position before handling collision (projectile might be killed)
+                projectile_pos = projectile.rect.center
+
+                # Create hit particles - use simpler approach for player hits to reduce visual clutter
+                self.particle_system.create_particles(projectile_pos, "hit")
+
+                # Use the collision handler function
+                if handle_enemy_projectile_player_collision(self.player, projectile):
+                    # Play hit sound
+                    self.play_sound("player_hit")
+
+                    # Trigger screen shake when player is hit by projectile
+                    if self.camera:
+                        # Get screen shake settings from config
+                        shake_duration = config.get(
+                            "effects", "screen_shake", "duration", default=300
+                        )
+                        shake_intensity = config.get(
+                            "effects", "screen_shake", "intensity", default=15
+                        )
+                        self.camera.start_screen_shake(shake_duration, shake_intensity)
+                        logger.debug(
+                            f"Screen shake triggered: duration={shake_duration}ms, intensity={shake_intensity}"
+                        )
+
+                    logger.debug(f"Player hit by projectile. Health: {self.player.current_health}")
+
+        # Player vs Enemies - using optimized collision system
+        if not self.player.invincible:
+            enemy_hits = self.collision_system.check_player_enemy_collisions(
+                self.player, self.enemy_group
+            )
+
+            for enemy in enemy_hits:
+                # Use the collision handler function
+                if handle_player_enemy_collision(self.player, enemy):
+                    # Play sound
+                    self.play_sound("player_hit")
+
+                    # Trigger screen shake for direct enemy collision (stronger than projectile hits)
+                    if self.camera:
+                        # Get screen shake settings from config with higher intensity for direct hits
+                        shake_duration = config.get(
+                            "effects", "screen_shake", "duration", default=300
+                        )
+                        shake_intensity = (
+                            config.get("effects", "screen_shake", "intensity", default=15) * 1.5
+                        )
+                        self.camera.start_screen_shake(int(shake_duration), shake_intensity * 1.5)
+                        logger.debug(
+                            f"Strong screen shake triggered: duration={shake_duration}ms, intensity={shake_intensity*1.5}"
+                        )
+
+                    logger.debug(
+                        f"Player collided with enemy. Health: {self.player.current_health}"
+                    )
+
+        # Player vs Powerups - using optimized collision system
+        powerup_hits = self.collision_system.check_player_powerup_collisions(
+            self.player, self.powerup_group
+        )
+
+        for powerup in powerup_hits:
+            if powerup.active:
+                # Create powerup collection particles
+                self.particle_system.create_particles(powerup.rect.center, "powerup")
+
+                # Play powerup collection sound
+                self.play_sound("powerup_collect")
+
+                # Use the collision handler function to apply the powerup effect
+                if handle_player_powerup_collision(self.player, powerup):
+                    powerup.kill()  # Remove from all sprite groups
+                    self.powerups_collected += 1
+
+                    # Update score for collecting a powerup
+                    self.score_manager.powerup_collected()
+
+                    logger.info(
+                        f"Powerup collected: {powerup.type}. Total collected: {self.powerups_collected}"
+                    )
+
+    def handle_enemy_death(self, enemy):
+        """Handle an enemy's death, including potential powerup drops."""
+        # Store the enemy position before killing it
+        enemy_position = enemy.rect.center
+
+        # Kill the enemy (remove from sprite groups)
+        enemy.kill()
+        self.enemies_killed += 1
+
+        # Update score for killing an enemy
+        self.score_manager.enemy_defeated()
+
+        # Create death particles at stored enemy position
+        self.particle_system.create_particles(enemy_position, "death")
+
+        logger.debug(f"Enemy {enemy.id} killed. Total killed: {self.enemies_killed}")
+
+        # Check for powerup drops
+        if random.random() < 0.25:  # 25% chance
+            self.drop_powerup(enemy_position)
+
+    def drop_powerup(self, position):
+        """Create a random powerup at the given position and add it to the game."""
+        # Select a random powerup type
+        powerup_type = random.choice(["health", "shield", "weapon"])
+
+        # Create the powerup
+        powerup = Powerup(position, powerup_type)
+
+        # Add to sprite groups
+        self.powerup_group.add(powerup)
+        self.all_sprites.add(powerup)
+
+        logger.debug(f"Dropped {powerup_type} powerup at {position}")
 
     def update(self):
         """Update game state for the current frame."""
@@ -239,8 +419,18 @@ class GameScene(Scene):
             self.spawn_enemy()
             self.last_spawn_time = current_time
 
-        # Update all sprites - enemy update needs player position
+        # Get number of projectiles before player update
+        num_projectiles_before = len(self.projectile_group)
+
+        # Update player
         self.player.update()
+
+        # Check if a new projectile was created by comparing the number of projectiles
+        num_projectiles_after = len(self.projectile_group)
+        if num_projectiles_after > num_projectiles_before:
+            # A new projectile was created, play a shooting sound with a random chance
+            if random.random() < 0.3:  # Only play 30% of the time to avoid sound overload
+                self.play_sound("player_hit")  # Using player_hit for now since we know it exists
 
         # Update camera to follow player
         if self.camera:
@@ -258,6 +448,9 @@ class GameScene(Scene):
                 enemy.update(self.player.rect.center, current_time)
         self.projectile_group.update()
         self.powerup_group.update()
+
+        # Update particle effects
+        self.particle_system.update()
 
         # Update the collision system with current game objects
         self.collision_system.update(
@@ -313,112 +506,8 @@ class GameScene(Scene):
         """Handle player input that isn't already handled in Player.update()"""
         # Player movement and shooting is handled in Player.update()
 
-        # If arrow keys are pressed (player is moving) and space is pressed (firing),
-        # occasionally play sound
-        player_moving = (
-            keys[pygame.K_LEFT] or keys[pygame.K_RIGHT] or keys[pygame.K_UP] or keys[pygame.K_DOWN]
-        )
-
-        if (
-            player_moving
-            and pygame.time.get_ticks() - self.player.last_shot_time > self.player.shot_cooldown
-        ):
-            if random.random() < 0.3:  # Don't play on every shot to avoid sound overload
-                # Use asset manager to play sound
-                self.play_sound("player_hit")
-
-    def _handle_collisions(self):
-        """Check for and handle all collisions."""
-        # Projectiles vs Enemies - using optimized collision system
-        projectile_hits = self.collision_system.check_projectile_enemy_collisions(
-            self.projectile_group, self.enemy_group
-        )
-
-        for projectile, enemies in projectile_hits.items():
-            for enemy in enemies:
-                # Use the collision handler function
-                if handle_projectile_enemy_collision(projectile, enemy):
-                    self.play_sound("enemy_hit")
-                    self.handle_enemy_death(enemy)
-                    logger.debug(f"Enemy killed. Total killed: {self.enemies_killed}")
-
-        # Enemy Projectiles vs Player - using optimized collision system
-        if not self.player.invincible:
-            projectile_hits = self.collision_system.check_enemy_projectile_player_collision(
-                self.player, self.projectile_group
-            )
-
-            for projectile in projectile_hits:
-                # Use the collision handler function
-                if handle_enemy_projectile_player_collision(self.player, projectile):
-                    self.play_sound("player_hit")
-
-                    # Check if player died from this projectile hit
-                    if self.player.current_health <= 0:
-                        self.play_sound("game_lost")
-
-        # Player vs Enemies - using optimized collision system
-        if not self.player.invincible:
-            enemy_collisions = self.collision_system.check_player_enemy_collisions(
-                self.player, self.enemy_group
-            )
-
-            for enemy in enemy_collisions:
-                if handle_player_enemy_collision(self.player, enemy):
-                    self.play_sound("player_hit")
-
-                    # Check if player died from this collision
-                    if self.player.current_health <= 0:
-                        self.play_sound("game_lost")
-
-        # Player vs Powerups - using optimized collision system
-        powerup_collisions = self.collision_system.check_player_powerup_collisions(
-            self.player, self.powerup_group
-        )
-
-        for powerup in powerup_collisions:
-            if powerup.active:
-                # Play powerup collection sound
-                self.play_sound("powerup_collect")
-
-                # Apply powerup effect
-                handle_player_powerup_collision(self.player, powerup)
-                powerup.kill()  # Remove from all sprite groups
-                self.powerups_collected += 1
-
-                # Update score
-                self.score_manager.powerup_collected()
-
-                logger.info(
-                    f"Powerup collected: {powerup.type}. Total collected: {self.powerups_collected}"
-                )
-
-    def handle_enemy_death(self, enemy):
-        """Handle an enemy's death, including potential powerup drops."""
-        # Remove enemy
-        enemy.kill()
-        self.enemies_killed += 1
-
-        # Update score
-        self.score_manager.enemy_defeated()
-
-        # Random chance to drop a powerup (25% chance)
-        if random.random() < 0.25:  # 25% chance
-            self.drop_powerup(enemy.rect.center)
-
-    def drop_powerup(self, position):
-        """Create a random powerup at the given position and add it to the game."""
-        # Select a random powerup type
-        powerup_type = random.choice(["health", "shield", "weapon"])
-
-        # Create the powerup
-        powerup = Powerup(position, powerup_type)
-
-        # Add to sprite groups
-        self.powerup_group.add(powerup)
-        self.all_sprites.add(powerup)
-
-        logger.debug(f"Dropped {powerup_type} powerup at {position}")
+        # We'll remove the sound effect here since it's now handled directly in
+        # Player.update when a shot is actually fired
 
     def render(self):
         """Render all game objects to the screen."""
@@ -439,6 +528,13 @@ class GameScene(Scene):
         else:
             # Fallback to regular sprite drawing if no camera
             self.all_sprites.draw(self.screen)
+
+        # Update particle system with camera offset to ensure particles are drawn with the camera offset
+        if self.camera:
+            self.particle_system.set_camera_offset(self.camera.get_offset())
+
+        # Draw particles with camera offset already applied in the particle system
+        self.particle_system.draw(self.screen)
 
         # Display game stats
         self._render_ui()

@@ -13,7 +13,7 @@ This document outlines the planned development path for Draugr's Descent, organi
 ### Visual Enhancements
 - [x] Replace placeholder graphics with proper sprites
 - [ ] Add animations for player, enemies, and projectiles
-- [ ] Implement basic particle effects (explosions, damage indicators)
+- [x] Implement basic particle effects (explosions, damage indicators)
 - [ ] Add screen shake and visual feedback
 
 ### Audio

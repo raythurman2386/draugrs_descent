@@ -26,10 +26,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Different enemy types with unique behaviors (chargers, ranged attackers)
 - UI assets in place and working
 - Initial sprites and placeholder map in place
+- Particle effects system for projectile hits, enemy deaths, and powerup collection
+- Screen shake effect when player takes damage
+- Unit tests for particle system to ensure proper behavior
 
 ### Changed
 - Refactored monolithic game class into scene-based architecture
-- Standardized font usage across all scenes using Asset Manager
+- Improved projectile system with proper map boundary checking
+- Enhanced player shooting mechanism with configurable shooting range
+- Fixed enemy spawning to use map dimensions instead of hardcoded screen values
+- Added safeguards to prevent shot cooldown issues during long gameplay sessions
+- Improved sound effect logic for player shooting
 - Improved configuration access for screen dimensions and colors
 - Optimized collision detection for improved performance
 

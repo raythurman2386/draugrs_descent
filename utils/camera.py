@@ -1,4 +1,6 @@
 import pygame
+import random
+import math
 from utils.logger import GameLogger
 
 # Get a logger for the camera system
@@ -23,6 +25,13 @@ class Camera:
         self.height = map_height
         self.screen_width = screen_width
         self.screen_height = screen_height
+
+        # Screen shake properties
+        self.shake_duration = 0
+        self.shake_intensity = 0
+        self.shake_start_time = 0
+        self.shake_offset = (0, 0)
+
         logger.debug(f"Camera initialized: {self.camera}")
 
     def update(self, target):
@@ -50,7 +59,57 @@ class Camera:
         # Update camera position
         self.camera.x = x
         self.camera.y = y
+
+        # Apply screen shake if active
+        self._update_screen_shake()
+
         logger.debug(f"Camera updated: x={x}, y={y}")
+
+    def _update_screen_shake(self):
+        """Update screen shake effect if active."""
+        if self.shake_duration > 0:
+            # Calculate how much time has passed since the shake started
+            current_time = pygame.time.get_ticks()
+            elapsed = current_time - self.shake_start_time
+
+            # Check if shake should still be active
+            if elapsed < self.shake_duration:
+                # Calculate remaining shake intensity (decreases over time)
+                remaining_percentage = 1.0 - (elapsed / self.shake_duration)
+                current_intensity = self.shake_intensity * remaining_percentage
+
+                # Generate random shake offset - use a more pronounced shake pattern
+                # Alternate between positive and negative values for more visible effect
+                shake_x = random.uniform(-current_intensity, current_intensity)
+                shake_y = random.uniform(-current_intensity, current_intensity)
+
+                # Add a sine wave component to make the shake more fluid
+                time_factor = elapsed / 30  # Adjust for speed of oscillation
+                sine_component = math.sin(time_factor) * current_intensity * 0.5
+
+                # Combine random and sine components
+                self.shake_offset = (int(shake_x + sine_component), int(shake_y))
+
+                # Log the shake offset to verify it's being applied
+                logger.debug(f"Screen shake offset: {self.shake_offset}")
+            else:
+                # Shake duration has ended
+                self.shake_duration = 0
+                self.shake_offset = (0, 0)
+                logger.debug("Screen shake ended")
+
+    def start_screen_shake(self, duration, intensity):
+        """
+        Start a screen shake effect.
+
+        Args:
+            duration (int): Duration of the shake in milliseconds
+            intensity (float): Maximum pixel offset for the shake
+        """
+        self.shake_duration = duration
+        self.shake_intensity = intensity
+        self.shake_start_time = pygame.time.get_ticks()
+        logger.debug(f"Screen shake started: duration={duration}ms, intensity={intensity}")
 
     def apply(self, entity):
         """
@@ -62,7 +121,10 @@ class Camera:
         Returns:
             Pygame rect with camera offset applied
         """
-        return entity.rect.move(self.camera.topleft)
+        # Apply base camera offset plus any shake offset
+        offset_x = self.camera.x + self.shake_offset[0]
+        offset_y = self.camera.y + self.shake_offset[1]
+        return entity.rect.move(offset_x, offset_y)
 
     def apply_rect(self, rect):
         """
@@ -74,7 +136,10 @@ class Camera:
         Returns:
             Pygame rect with camera offset applied
         """
-        return rect.move(self.camera.topleft)
+        # Apply base camera offset plus any shake offset
+        offset_x = self.camera.x + self.shake_offset[0]
+        offset_y = self.camera.y + self.shake_offset[1]
+        return rect.move(offset_x, offset_y)
 
     def get_offset(self):
         """
@@ -83,4 +148,5 @@ class Camera:
         Returns:
             Tuple (x, y) with the current camera offset
         """
-        return self.camera.topleft
+        # Include shake offset in the camera offset
+        return (self.camera.x + self.shake_offset[0], self.camera.y + self.shake_offset[1])
