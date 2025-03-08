@@ -19,8 +19,11 @@ colors:
 # Game Mechanics
 mechanics:
   enemy_spawn:
-    interval: 1000  # milliseconds
+    interval: 1000  # milliseconds - base spawn interval
     margin: 30  # Pixels offset from map edge for spawning enemies
+    min_interval: 250  # Minimum spawn interval in milliseconds (fastest possible spawn rate)
+    scaling_factor: 0.85  # Factor for exponential spawn rate increase (lower = faster increase)
+    scaling_interval: 30000  # Time between difficulty increases in milliseconds (30 seconds)
   player:
     shooting_range: 300  # Maximum distance player projectiles can travel
 

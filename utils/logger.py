@@ -2,6 +2,7 @@ import logging
 import os
 import datetime
 import sys
+import threading
 from logging.handlers import RotatingFileHandler
 
 # Log levels
@@ -24,12 +25,42 @@ current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 DEFAULT_LOG_FILE = os.path.join(LOG_DIR, f"game_{current_time}.log")
 
 
+class SafeRotatingFileHandler(RotatingFileHandler):
+    """A rotating file handler that handles permission errors gracefully."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.lock = threading.RLock()
+
+    def emit(self, record):
+        """
+        Emit a record in a thread-safe manner, handling permission errors.
+        """
+        try:
+            with self.lock:
+                super().emit(record)
+        except PermissionError:
+            # If we can't rotate, just continue logging to the current file
+            # or try to write to stderr as a fallback
+            try:
+                sys.stderr.write(f"Logger permission error: {record.message}\n")
+            except:
+                pass
+        except Exception as e:
+            # Other exceptions shouldn't crash the app
+            try:
+                sys.stderr.write(f"Logger error: {e}\n")
+            except:
+                pass
+
+
 class GameLogger:
     """
     Custom logger for the game that provides consistent formatting and behavior.
     """
 
     _loggers = {}  # Cache to store created loggers
+    _logger_lock = threading.Lock()  # Lock for creating loggers
 
     @staticmethod
     def get_logger(
@@ -62,35 +93,51 @@ class GameLogger:
         if name in GameLogger._loggers:
             return GameLogger._loggers[name]
 
-        # Create new logger
-        logger = logging.getLogger(name)
-        logger.setLevel(level)
-        logger.propagate = False  # Don't propagate to parent loggers
+        # Use a lock when creating new loggers to prevent race conditions
+        with GameLogger._logger_lock:
+            # Double-check if logger was created while waiting for lock
+            if name in GameLogger._loggers:
+                return GameLogger._loggers[name]
 
-        # Clear existing handlers if any
-        if logger.handlers:
-            logger.handlers.clear()
+            # Create new logger
+            logger = logging.getLogger(name)
+            logger.setLevel(level)
+            logger.propagate = False  # Don't propagate to parent loggers
 
-        # Create formatter
-        formatter = logging.Formatter(format_string)
+            # Clear existing handlers if any
+            if logger.handlers:
+                logger.handlers.clear()
 
-        # Add file handler if needed
-        if log_to_file:
-            file_handler = RotatingFileHandler(
-                file_path, maxBytes=max_file_size, backupCount=backup_count
-            )
-            file_handler.setFormatter(formatter)
-            logger.addHandler(file_handler)
+            # Create formatter
+            formatter = logging.Formatter(format_string)
 
-        # Add console handler if needed
-        if log_to_console:
-            console_handler = logging.StreamHandler(sys.stdout)
-            console_handler.setFormatter(formatter)
-            logger.addHandler(console_handler)
+            # Add file handler if needed with our safe handler
+            if log_to_file:
+                try:
+                    file_handler = SafeRotatingFileHandler(
+                        file_path,
+                        maxBytes=max_file_size,
+                        backupCount=backup_count,
+                        delay=True,  # Don't open file until first log message
+                    )
+                    file_handler.setFormatter(formatter)
+                    logger.addHandler(file_handler)
+                except Exception as e:
+                    # Fall back to console only if file handler fails
+                    sys.stderr.write(
+                        f"Failed to create file handler: {e}. Falling back to console only.\n"
+                    )
+                    log_to_console = True
 
-        # Cache the logger
-        GameLogger._loggers[name] = logger
-        return logger
+            # Add console handler if needed
+            if log_to_console:
+                console_handler = logging.StreamHandler(sys.stdout)
+                console_handler.setFormatter(formatter)
+                logger.addHandler(console_handler)
+
+            # Cache the logger
+            GameLogger._loggers[name] = logger
+            return logger
 
     @staticmethod
     def set_all_loggers_level(level):

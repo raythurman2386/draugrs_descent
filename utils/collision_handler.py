@@ -17,8 +17,24 @@ def handle_player_enemy_collision(player, enemy):
     Returns:
         bool: True if player died, False otherwise.
     """
-    logger.debug(f"Player collided with Enemy {enemy.id}")
-    return player.take_damage(enemy.damage)
+    # Get current time for enemy collision cooldown check
+    current_time = pygame.time.get_ticks()
+
+    # Check if enemy can collide (based on its cooldown)
+    if hasattr(enemy, "can_collide") and not enemy.can_collide(current_time):
+        return False
+
+    # Log detailed information about the collision and damage
+    logger.debug(f"Player collided with Enemy {enemy.id} (type: {enemy.enemy_type})")
+    logger.debug(f"Enemy damage: {enemy.damage}, Player current health: {player.current_health}")
+
+    # Apply damage to player and return the result
+    result = player.take_damage(enemy.damage)
+
+    # Log the result of damage application
+    logger.debug(f"Damage applied: {enemy.damage}, Player health after: {player.current_health}")
+
+    return result
 
 
 def handle_player_powerup_collision(player, powerup):

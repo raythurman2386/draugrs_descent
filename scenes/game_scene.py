@@ -55,6 +55,21 @@ class GameScene(Scene):
         self.start_time = pygame.time.get_ticks()
         self.powerups_collected = 0
 
+        # Spawn rate scaling variables
+        self.base_spawn_interval = config.get("mechanics", "enemy_spawn", "interval", default=1000)
+        self.min_spawn_interval = config.get(
+            "mechanics", "enemy_spawn", "min_interval", default=250
+        )  # Fastest spawn rate
+        self.spawn_rate_increase_factor = config.get(
+            "mechanics", "enemy_spawn", "scaling_factor", default=0.85
+        )  # How quickly spawn rate increases
+        self.spawn_rate_increase_interval = config.get(
+            "mechanics", "enemy_spawn", "scaling_interval", default=30000
+        )  # Time in ms between difficulty increases
+        self.last_spawn_rate_increase = pygame.time.get_ticks()
+        self.current_spawn_interval = self.base_spawn_interval
+        self.difficulty_level = 1
+
         # Collision system setup
         screen_width = config.get("screen", "width", default=800)
         screen_height = config.get("screen", "height", default=600)
@@ -270,9 +285,11 @@ class GameScene(Scene):
         current_time = pygame.time.get_ticks()
         keys = pygame.key.get_pressed()
 
+        # Update difficulty based on time played
+        self._update_difficulty(current_time)
+
         # Spawn enemies
-        enemy_spawn_interval = config.get("gameplay", "enemy_spawn_interval", default=1500)
-        if current_time - self.last_spawn_time > enemy_spawn_interval:
+        if current_time - self.last_spawn_time > self.current_spawn_interval:
             self.spawn_enemy()
 
         # Update game objects
@@ -321,6 +338,32 @@ class GameScene(Scene):
             game_over.powerups_collected = self.powerups_collected
             game_over.time_survived = self.time_survived
             self.switch_to_scene("game_over")
+
+    def _update_difficulty(self, current_time):
+        """Update game difficulty based on time played."""
+        # Check if it's time to increase difficulty
+        if current_time - self.last_spawn_rate_increase > self.spawn_rate_increase_interval:
+            # Increase difficulty level
+            self.difficulty_level += 1
+
+            # Calculate new spawn interval with exponential decrease over time
+            self.current_spawn_interval = max(
+                self.min_spawn_interval,
+                self.base_spawn_interval
+                * (self.spawn_rate_increase_factor ** (self.difficulty_level - 1)),
+            )
+
+            # Log the difficulty increase
+            logger.info(
+                f"Difficulty increased to level {self.difficulty_level}. New spawn interval: {self.current_spawn_interval}ms"
+            )
+
+            # Reset timer for next difficulty increase
+            self.last_spawn_rate_increase = current_time
+
+            # Optional: Show difficulty increase to player
+            self.particle_system.create_particles(self.player.rect.center, "powerup")
+            self.play_sound("powerup_collect")  # Reuse existing sound for now
 
     def render(self):
         """Render all game elements to the screen."""
@@ -372,6 +415,13 @@ class GameScene(Scene):
             (255, 255, 255),
             screen_width - right_margin,
             80,
+            ui_font,
+        )
+        self.draw_text(
+            f"Level: {self.difficulty_level}",
+            (255, 165, 0),
+            screen_width - right_margin,
+            110,
             ui_font,
         )
         self.draw_text(
