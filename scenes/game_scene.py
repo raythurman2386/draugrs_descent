@@ -175,7 +175,7 @@ class GameScene(Scene):
         ]:
             if group:  # Simply check if the group exists
                 group.empty()
-                
+
         # Reset camera
         if self.camera:
             self.camera.reset()
