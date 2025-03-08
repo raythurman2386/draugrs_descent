@@ -1,6 +1,7 @@
 import os
 import xml.etree.ElementTree as ET
 import pygame
+import pytmx
 from utils.logger import GameLogger
 
 # Get a logger for the asset manager
@@ -15,6 +16,7 @@ class AssetManager:
     IMAGE_PATH = "assets/images"
     INTERFACE_PATH = "assets/interface"
     SCRIBBLE_DUNGEONS_PATH = "assets/scribble_dungeons"
+    MAP_PATH = "assets/maps"
 
     # Font filenames
     FONTS = {
@@ -49,6 +51,7 @@ class AssetManager:
         self.ui_elements = {}  # Dictionary to store UI elements
         self.spritesheets = {}  # Dictionary to store spritesheets
         self.spritesheet_data = {}  # Dictionary to store spritesheet metadata
+        self.tiled_maps = {}  # Dictionary to store loaded Tiled maps
 
         # Initialize pygame if not already done
         if not pygame.get_init():
@@ -340,6 +343,60 @@ class AssetManager:
                 return None
         except Exception as e:
             logger.error(f"Error loading scribble tileset {path}: {e}")
+            return None
+
+    def load_tiled_map(self, filename):
+        """
+        Load a Tiled map from the MAP_PATH.
+
+        Args:
+            filename: Name of the Tiled map file
+
+        Returns:
+            A pytmx.TiledMap object
+        """
+        path = os.path.join(self.MAP_PATH, filename)
+
+        # Check if already loaded
+        if path in self.tiled_maps:
+            return self.tiled_maps[path]
+
+        try:
+            if os.path.exists(path):
+                # Load the map
+                map_data = pytmx.load_pygame(path, pixelalpha=True)
+                self.tiled_maps[path] = map_data
+                logger.debug(f"Loaded Tiled map: {path}")
+                return map_data
+            else:
+                logger.warning(f"Tiled map file not found: {path}")
+                return None
+        except Exception as e:
+            logger.error(f"Error loading Tiled map {path}: {e}")
+            return None
+
+    def get_tiled_map_tile(self, filename, x, y):
+        """
+        Get a tile from a Tiled map by coordinates.
+
+        Args:
+            filename: Name of the Tiled map file
+            x: X-coordinate of the tile
+            y: Y-coordinate of the tile
+
+        Returns:
+            A pygame Surface with the tile
+        """
+        map_data = self.load_tiled_map(filename)
+        if map_data is None:
+            return None
+
+        try:
+            # Get the tile
+            tile = map_data.get_tile_image(x, y)
+            return tile
+        except Exception as e:
+            logger.error(f"Error getting tile from Tiled map {filename}: {e}")
             return None
 
     def preload_ui_assets(self, themes=None):

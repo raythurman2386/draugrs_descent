@@ -11,7 +11,9 @@ from utils import (
     handle_player_enemy_collision,
     handle_player_powerup_collision,
 )
-from managers import config, game_state, ScoreManager
+from utils.camera import Camera
+from utils.tiledmap import TiledMapRenderer
+from managers import config, game_state, ScoreManager, game_asset_manager
 from managers.game_state_manager import GameState
 from utils.logger import GameLogger
 import logging
@@ -78,10 +80,66 @@ class GameScene(Scene):
             cell_size=64,
         )
 
+        # Load the tiled map
+        self._load_map()
+
         # Set game state to PLAYING
         game_state.change_state(GameState.PLAYING)
 
         logger.info("Game state initialized/reinitialized")
+
+    def _load_map(self):
+        """Load the tiled map and initialize camera."""
+        # Load the map from the asset manager
+        logger.info("Loading tiled map")
+        try:
+            tiled_map = game_asset_manager.load_tiled_map("Tiled/sampleMap.tmx")
+
+            if tiled_map:
+                # Create a map renderer
+                self.map_renderer = TiledMapRenderer(tiled_map)
+
+                # Get screen dimensions for camera
+                screen_width = config.get("screen", "width", default=800)
+                screen_height = config.get("screen", "height", default=600)
+
+                # Create camera with map dimensions and screen dimensions
+                self.camera = Camera(
+                    self.map_renderer.width, self.map_renderer.height, screen_width, screen_height
+                )
+
+                # Set player map boundaries if player exists
+                if hasattr(self, "player") and self.player:
+                    self.player.map_width = self.map_renderer.width
+                    self.player.map_height = self.map_renderer.height
+                    logger.info(
+                        f"Set player map boundaries to {self.map_renderer.width}x{self.map_renderer.height}"
+                    )
+
+                logger.info(
+                    f"Map loaded successfully - dimensions: {self.map_renderer.width}x{self.map_renderer.height}"
+                )
+            else:
+                logger.warning("Tiled map could not be loaded, using fallback background")
+                self._setup_fallback_background()
+        except Exception as e:
+            # This will catch any issues with map loading, including in test environments
+            logger.warning(f"Error loading map, using fallback background: {e}")
+            self._setup_fallback_background()
+
+    def _setup_fallback_background(self):
+        """Set up a fallback colored background if map loading fails."""
+        logger.info("Setting up fallback background")
+        self.map_renderer = None
+        self.camera = None
+
+        # Set player boundaries to screen dimensions as fallback
+        if hasattr(self, "player") and self.player:
+            screen_width = config.get("screen", "width", default=800)
+            screen_height = config.get("screen", "height", default=600)
+            self.player.map_width = screen_width
+            self.player.map_height = screen_height
+            logger.info(f"Set player fallback boundaries to screen: {screen_width}x{screen_height}")
 
     def reset(self):
         """Reset the game scene to initial state when returning to this scene."""
@@ -161,6 +219,11 @@ class GameScene(Scene):
 
         # Update all sprites - enemy update needs player position
         self.player.update()
+
+        # Update camera to follow player
+        if self.camera:
+            self.camera.update(self.player)
+
         current_time = pygame.time.get_ticks()
         for enemy in self.enemy_group:
             if hasattr(enemy, "enemy_type") and enemy.enemy_type == Enemy.TYPE_RANGED:
@@ -348,12 +411,30 @@ class GameScene(Scene):
         logger.debug(f"Dropped {powerup_type} powerup at {position}")
 
     def render(self):
-        """Draw the game scene."""
-        # Get background color from config
-        background_color = config.get_color("black")
-        self.screen.fill(background_color)
-        self.all_sprites.draw(self.screen)
+        """Render all game objects to the screen."""
+        # Get screen color from config
+        screen_color = config.get("screen", "background_color", default="#222222")
 
+        # Fill the screen with background color
+        self.screen.fill(pygame.Color(screen_color))
+
+        # Render the tiled map if available
+        if self.map_renderer and self.camera:
+            self.map_renderer.render(self.screen, self.camera)
+
+        # Render all sprites with camera offset if available
+        if self.camera:
+            for sprite in self.all_sprites:
+                self.screen.blit(sprite.image, self.camera.apply(sprite))
+        else:
+            # Fallback to regular sprite drawing if no camera
+            self.all_sprites.draw(self.screen)
+
+        # Display game stats
+        self._render_ui()
+
+    def _render_ui(self):
+        """Draw the game UI elements."""
         # Get health bar dimensions from config
         health_bar_width = config.get("ui", "health_bar_width", default=200)
         health_bar_height = config.get("ui", "health_bar_height", default=20)
@@ -401,6 +482,24 @@ class GameScene(Scene):
 
         # Draw score - centered
         score_text = f"Score: {self.score_manager.get_formatted_score()}"
+        high_score_text = f"High: {self.score_manager.get_formatted_high_score()}"
+
+        self.draw_text(score_text, (255, 255, 0), screen_width // 2, 20)  # Yellow color for score
+        self.draw_text(
+            high_score_text, (255, 165, 0), screen_width // 2, 50
+        )  # Orange color for high score
+
+    def resume_from_pause(self):
+        """Resume the game after returning from pause menu."""
+        self.paused = False
+
+        # Reset game state to PLAYING
+        game_state.change_state(GameState.PLAYING)
+
+        # Play game music again (since we might have stopped it when pausing)
+        self.play_scene_music("game")
+
+        logger.info("Game resumed from pause")
         high_score_text = f"High: {self.score_manager.get_formatted_high_score()}"
 
         self.draw_text(score_text, (255, 255, 0), screen_width // 2, 20)  # Yellow color for score

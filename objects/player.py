@@ -1,6 +1,7 @@
 import pygame
 import math
 from utils import find_closest_enemy, GameLogger
+from .projectile import Projectile
 from managers import config, game_asset_manager
 
 # Get a logger for the player module
@@ -60,6 +61,10 @@ class Player(pygame.sprite.Sprite):
         self.enemy_group = None
         self.projectile_group = None
         self.all_sprites = None
+
+        # Map boundaries for clamping movement
+        self.map_width = None
+        self.map_height = None
 
         logger.info(f"Player initialized with {player_color} character sprite")
 
@@ -121,9 +126,9 @@ class Player(pygame.sprite.Sprite):
             self.rect.y += config.get("player", "attributes", "movement_speed", default=5)
             moving = True
 
-        # Keep player within screen bounds
-        if self.screen:
-            self.rect.clamp_ip(self.screen.get_rect())
+        # Clamp to map boundaries
+        if self.map_width and self.map_height:
+            self.rect.clamp_ip((0, 0, self.map_width, self.map_height))
 
         # Handle shooting only when moving
         current_time = pygame.time.get_ticks()
