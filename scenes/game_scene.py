@@ -16,7 +16,6 @@ from utils.tiledmap import TiledMapRenderer
 from managers import config, game_state, ScoreManager, game_asset_manager
 from managers.game_state_manager import GameState
 from utils.logger import GameLogger
-import logging
 
 # Get a logger for the game scene
 logger = GameLogger.get_logger("game_scene")
@@ -108,6 +107,11 @@ class GameScene(Scene):
                     self.map_renderer.width, self.map_renderer.height, screen_width, screen_height
                 )
 
+                # Store map dimensions directly on the GameScene
+                self.map_width = self.map_renderer.width
+                self.map_height = self.map_renderer.height
+                logger.info(f"Set map dimensions to {self.map_width}x{self.map_height}")
+
                 # Set player map boundaries if player exists
                 if hasattr(self, "player") and self.player:
                     self.player.map_width = self.map_renderer.width
@@ -133,10 +137,17 @@ class GameScene(Scene):
         self.map_renderer = None
         self.camera = None
 
+        # Set fallback dimensions to screen dimensions
+        screen_width = config.get("screen", "width", default=800)
+        screen_height = config.get("screen", "height", default=600)
+
+        # Set map dimensions directly on GameScene
+        self.map_width = screen_width
+        self.map_height = screen_height
+        logger.info(f"Set fallback map dimensions to screen size: {screen_width}x{screen_height}")
+
         # Set player boundaries to screen dimensions as fallback
         if hasattr(self, "player") and self.player:
-            screen_width = config.get("screen", "width", default=800)
-            screen_height = config.get("screen", "height", default=600)
             self.player.map_width = screen_width
             self.player.map_height = screen_height
             logger.info(f"Set player fallback boundaries to screen: {screen_width}x{screen_height}")
@@ -254,18 +265,6 @@ class GameScene(Scene):
                 # Random chance to drop a powerup when an enemy is defeated
                 if random.random() < 0.25:  # 25% chance
                     self.drop_powerup(enemy.rect.center)
-
-        # Clean up off-screen projectiles
-        screen_width = config.get("screen", "width", default=800)
-        screen_height = config.get("screen", "height", default=600)
-        for projectile in self.projectile_group.copy():
-            if (
-                projectile.rect.right < 0
-                or projectile.rect.left > screen_width
-                or projectile.rect.bottom < 0
-                or projectile.rect.top > screen_height
-            ):
-                projectile.kill()
 
         # Update time survived
         self.time_survived = (current_time - self.start_time) // 1000
@@ -482,24 +481,6 @@ class GameScene(Scene):
 
         # Draw score - centered
         score_text = f"Score: {self.score_manager.get_formatted_score()}"
-        high_score_text = f"High: {self.score_manager.get_formatted_high_score()}"
-
-        self.draw_text(score_text, (255, 255, 0), screen_width // 2, 20)  # Yellow color for score
-        self.draw_text(
-            high_score_text, (255, 165, 0), screen_width // 2, 50
-        )  # Orange color for high score
-
-    def resume_from_pause(self):
-        """Resume the game after returning from pause menu."""
-        self.paused = False
-
-        # Reset game state to PLAYING
-        game_state.change_state(GameState.PLAYING)
-
-        # Play game music again (since we might have stopped it when pausing)
-        self.play_scene_music("game")
-
-        logger.info("Game resumed from pause")
         high_score_text = f"High: {self.score_manager.get_formatted_high_score()}"
 
         self.draw_text(score_text, (255, 255, 0), screen_width // 2, 20)  # Yellow color for score

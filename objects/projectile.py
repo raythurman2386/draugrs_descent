@@ -10,7 +10,15 @@ class Projectile(pygame.sprite.Sprite):
     # Counter for unique projectile IDs
     next_id = 1
 
-    def __init__(self, position, velocity, damage=None, is_enemy_projectile=False):
+    def __init__(
+        self,
+        position,
+        velocity,
+        damage=None,
+        is_enemy_projectile=False,
+        map_width=None,
+        map_height=None,
+    ):
         super().__init__()
         # Assign a unique ID to each projectile
         self.id = Projectile.next_id
@@ -41,6 +49,13 @@ class Projectile(pygame.sprite.Sprite):
             else config.get("projectile", "attributes", "damage", default=10)
         )
 
+        # Store map dimensions for boundary checking
+        self.map_width = map_width or config.get("screen", "width", default=800)
+        self.map_height = map_height or config.get("screen", "height", default=600)
+
+        # Add margin for off-screen detection
+        self.off_screen_margin = config.get("projectile", "off_screen_margin", default=100)
+
         self.active = True
         logger.debug(
             f"Projectile {self.id} created at {position} with velocity {velocity} (enemy: {is_enemy_projectile})"
@@ -52,18 +67,16 @@ class Projectile(pygame.sprite.Sprite):
         self.position[1] += self.velocity[1]
         self.rect.center = (int(self.position[0]), int(self.position[1]))
 
-        # Check if projectile is off-screen
-        screen_width = config.get("screen", "width", default=800)
-        screen_height = config.get("screen", "height", default=600)
-
+        # Check if projectile is off-map with a margin
+        margin = self.off_screen_margin
         if (
-            self.rect.right < 0
-            or self.rect.left > screen_width
-            or self.rect.bottom < 0
-            or self.rect.top > screen_height
+            self.rect.right < -margin
+            or self.rect.left > self.map_width + margin
+            or self.rect.bottom < -margin
+            or self.rect.top > self.map_height + margin
         ):
             self.kill()
-            logger.debug(f"Projectile {self.id} went off-screen and was removed")
+            logger.debug(f"Projectile {self.id} went far off-map and was removed")
 
     def deactivate(self):
         """Deactivate the projectile."""

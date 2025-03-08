@@ -250,8 +250,17 @@ class RangedEnemy(Enemy):
             self.rect.centery + (dy / self.projectile_speed) * self.rect.height * 0.6,
         )
 
+        # Pass map dimensions to the projectile if we have them
+        map_width = getattr(self, "map_width", None)
+        map_height = getattr(self, "map_height", None)
+
         projectile = Projectile(
-            start_pos, (dx, dy), damage=self.projectile_damage, is_enemy_projectile=True
+            start_pos,
+            (dx, dy),
+            damage=self.projectile_damage,
+            is_enemy_projectile=True,
+            map_width=map_width,
+            map_height=map_height,
         )
 
         # Add to groups - ensure it's added to both groups properly
@@ -259,6 +268,8 @@ class RangedEnemy(Enemy):
         all_sprites.add(projectile)
 
         logger.debug(f"Ranged Enemy {self.id} fired projectile at player with velocity {(dx, dy)}")
+
+        return projectile
 
 
 class ChargerEnemy(Enemy):

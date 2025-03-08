@@ -176,9 +176,18 @@ class Player(pygame.sprite.Sprite):
                 dy = closest_enemy.rect.centery - self.rect.centery
                 distance = math.sqrt(dx**2 + dy**2)
                 velocity = (dx / distance * 10, dy / distance * 10)
-                projectile = Projectile(self.rect.center, velocity)
+
+                # Pass map dimensions to the projectile if we have them
+                map_width = getattr(self, "map_width", None)
+                map_height = getattr(self, "map_height", None)
+
+                projectile = Projectile(
+                    self.rect.center, velocity, map_width=map_width, map_height=map_height
+                )
+
                 logger.debug(f"Projectile velocity: {velocity}")
                 logger.debug(f"Projectile position: {projectile.rect.center}")
+
                 return projectile
         logger.debug("No valid target found")
         return None
