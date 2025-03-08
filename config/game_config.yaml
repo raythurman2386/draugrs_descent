@@ -20,11 +20,9 @@ colors:
 mechanics:
   enemy_spawn:
     interval: 1000  # milliseconds
-    edges:
-      top: [0, -30]
-      bottom: [0, 630]
-      left: [-30, 0]
-      right: [830, 0]
+    margin: 30  # Pixels offset from map edge for spawning enemies
+  player:
+    shooting_range: 300  # Maximum distance player projectiles can travel
 
 # Player Settings
 player:
@@ -75,8 +73,8 @@ enemy:
     max_health: 50
   # Spawn weights for different enemy types (out of 100)
   spawn_weights:
-    basic: 60
-    ranged: 20
+    basic: 50
+    ranged: 30
     charger: 20
 
 # Projectile Settings

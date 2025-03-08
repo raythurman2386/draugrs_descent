@@ -164,6 +164,7 @@ class Player(pygame.sprite.Sprite):
                 logger.debug("Weapon boost ended")
 
     def shoot(self):
+        """Find the closest enemy and shoot a projectile at it if within range."""
         # Find the closest enemy to aim at
         if self.enemy_group:
             logger.debug(f"Enemy group count: {len(self.enemy_group)}")
@@ -171,25 +172,39 @@ class Player(pygame.sprite.Sprite):
 
             if closest_enemy:
                 logger.debug(f"Closest enemy found at {closest_enemy.rect.center}")
-                # Calculate velocity towards the enemy
+                # Calculate distance to the enemy
                 dx = closest_enemy.rect.centerx - self.rect.centerx
                 dy = closest_enemy.rect.centery - self.rect.centery
                 distance = math.sqrt(dx**2 + dy**2)
-                velocity = (dx / distance * 10, dy / distance * 10)
 
-                # Pass map dimensions to the projectile if we have them
-                map_width = getattr(self, "map_width", None)
-                map_height = getattr(self, "map_height", None)
+                # Get shooting range from config
+                shooting_range = config.get("mechanics", "player", "shooting_range", default=250)
 
-                projectile = Projectile(
-                    self.rect.center, velocity, map_width=map_width, map_height=map_height
-                )
+                # Only shoot if enemy is within range
+                if distance <= shooting_range:
+                    # Calculate velocity towards the enemy
+                    projectile_speed = config.get("projectile", "attributes", "speed", default=10)
+                    velocity = (dx / distance * projectile_speed, dy / distance * projectile_speed)
 
-                logger.debug(f"Projectile velocity: {velocity}")
-                logger.debug(f"Projectile position: {projectile.rect.center}")
+                    # Pass map dimensions to the projectile if we have them
+                    map_width = getattr(self, "map_width", None)
+                    map_height = getattr(self, "map_height", None)
 
-                return projectile
-        logger.debug("No valid target found")
+                    projectile = Projectile(
+                        self.rect.center, velocity, map_width=map_width, map_height=map_height
+                    )
+
+                    logger.debug(f"Projectile velocity: {velocity}, distance to enemy: {distance}")
+                    logger.debug(f"Projectile position: {projectile.rect.center}")
+
+                    return projectile
+                else:
+                    logger.debug(
+                        f"Enemy at distance {distance} is beyond shooting range of {shooting_range}"
+                    )
+            else:
+                logger.debug("No valid target found")
+
         return None
 
     def take_damage(self, amount):

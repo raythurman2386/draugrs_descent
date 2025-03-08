@@ -162,41 +162,52 @@ class GameScene(Scene):
     def spawn_enemy(self):
         """Spawn an enemy at a random screen edge."""
         current_time = pygame.time.get_ticks()
-        enemy_spawn_interval = config.get("gameplay", "enemy_spawn_interval", default=1500)
 
-        if current_time - self.last_spawn_time > enemy_spawn_interval:
-            screen_width = config.get("screen", "width", default=800)
-            screen_height = config.get("screen", "height", default=600)
+        # Get map dimensions if available, otherwise use screen dimensions
+        map_width = getattr(self, "map_width", None) or config.get("screen", "width", default=800)
+        map_height = getattr(self, "map_height", None) or config.get(
+            "screen", "height", default=600
+        )
 
-            edge = random.randint(0, 3)
-            if edge == 0:  # Top
-                position = (
-                    random.randint(0, screen_width),
-                    0,  # Top edge
-                )
-            elif edge == 1:  # Bottom
-                position = (
-                    random.randint(0, screen_width),
-                    screen_height,  # Bottom edge
-                )
-            elif edge == 2:  # Left
-                position = (
-                    0,  # Left edge
-                    random.randint(0, screen_height),
-                )
-            else:  # Right
-                position = (
-                    screen_width,  # Right edge
-                    random.randint(0, screen_height),
-                )
+        # Get margin from config
+        margin = config.get("mechanics", "enemy_spawn", "margin", default=30)
 
-            # Use the factory function to create an enemy (randomly selects type based on weights)
-            enemy = create_enemy(position)
+        # Choose a random edge (0=top, 1=bottom, 2=left, 3=right)
+        edge = random.randint(0, 3)
+        if edge == 0:  # Top
+            position = (
+                random.randint(0, map_width),
+                -margin,  # Slightly off-screen at the top
+            )
+        elif edge == 1:  # Bottom
+            position = (
+                random.randint(0, map_width),
+                map_height + margin,  # Slightly off-screen at the bottom
+            )
+        elif edge == 2:  # Left
+            position = (
+                -margin,  # Slightly off-screen at the left
+                random.randint(0, map_height),
+            )
+        else:  # Right
+            position = (
+                map_width + margin,  # Slightly off-screen at the right
+                random.randint(0, map_height),
+            )
 
-            self.enemy_group.add(enemy)
-            self.all_sprites.add(enemy)
-            self.last_spawn_time = current_time
-            logger.debug(f"{enemy.enemy_type.capitalize()} enemy spawned at {position}")
+        # Use the factory function to create an enemy (randomly selects type based on weights)
+        enemy = create_enemy(position)
+
+        # Set map dimensions on the enemy for use in its projectile creation
+        enemy.map_width = map_width
+        enemy.map_height = map_height
+
+        self.enemy_group.add(enemy)
+        self.all_sprites.add(enemy)
+        self.last_spawn_time = current_time
+        logger.debug(
+            f"{enemy.enemy_type.capitalize()} enemy spawned at {position} (map: {map_width}x{map_height})"
+        )
 
     def handle_event(self, event):
         """Handle game-specific events."""
