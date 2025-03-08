@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Asset Manager for improved resource management
 - Options Menu for audio settings (music and sound effects volume)
 - Different enemy types with unique behaviors (chargers, ranged attackers)
+- UI assets in place and working
+- Initial sprites and placeholder map in place
 
 ### Changed
 - Refactored monolithic game class into scene-based architecture
