@@ -1,7 +1,6 @@
 import pygame
 import math
 import random
-import os
 from managers import config, game_asset_manager
 from utils.logger import GameLogger
 from objects.projectile import Projectile
@@ -28,153 +27,122 @@ class Enemy(pygame.sprite.Sprite):
         # Store enemy type
         self.enemy_type = enemy_type
 
-        # Get enemy dimensions from config
-        width = config.get("enemy", "dimensions", "width", default=30)
-        height = config.get("enemy", "dimensions", "height", default=30)
+        # Cache dimensions from config
+        self.width = config.get("enemy", "dimensions", "width", default=30)
+        self.height = config.get("enemy", "dimensions", "height", default=30)
 
-        # Get enemy color based on type
-        if enemy_type == self.TYPE_BASIC:
-            color = config.get("enemy", "appearance", "basic", "color", default="purple")
-        elif enemy_type == self.TYPE_RANGED:
-            color = config.get("enemy", "appearance", "ranged", "color", default="red")
-        elif enemy_type == self.TYPE_CHARGER:
-            color = config.get("enemy", "appearance", "charger", "color", default="yellow")
-        else:
-            color = "purple"  # Default fallback
+        # Map enemy types to colors
+        color_map = {
+            self.TYPE_BASIC: config.get("enemy", "appearance", "basic", "color", default="purple"),
+            self.TYPE_RANGED: config.get("enemy", "appearance", "ranged", "color", default="red"),
+            self.TYPE_CHARGER: config.get(
+                "enemy", "appearance", "charger", "color", default="yellow"
+            ),
+        }
+        self.color = color_map.get(enemy_type, "purple")
 
-        # Load character sprite using the asset manager
-        self.image = game_asset_manager.get_character_sprite(color, width, height)
+        # Load character sprite
+        self.image = game_asset_manager.get_character_sprite(self.color, self.width, self.height)
         self.rect = self.image.get_rect()
-
-        # Generate a mask for pixel-perfect collision detection
         self.mask = pygame.mask.from_surface(self.image)
 
-        self.rect.x = position[0]  # Set initial x position
-        self.rect.y = position[1]  # Set initial y position
-        self.position = [float(position[0]), float(position[1])]  # Store exact position
+        # Set initial position
+        self.rect.x = position[0]
+        self.rect.y = position[1]
+        self.position = [float(position[0]), float(position[1])]
 
-        # Get enemy attributes from config
+        # Cache enemy attributes from config
         self.max_health = config.get("enemy", "attributes", "max_health", default=30)
         self.health = self.max_health
         self.damage = config.get("enemy", "attributes", "damage", default=10)
-        self.speed = config.get("enemy", "attributes", "speed", default=5)  # Higher base speed
-        self.collision_cooldown = 1000
+        self.speed = config.get("enemy", "attributes", "speed", default=5)
+        self.collision_cooldown = config.get(
+            "enemy", "attributes", "collision_cooldown", default=1000
+        )
         self.last_collision_time = 0
 
-        # Store original image for reverting after effects
+        # Store original image for effects
         self.original_image = self.image.copy()
 
         # Flash effect properties
         self.flash_effect = False
         self.flash_timer = 0
         self.flash_duration = config.get("enemy", "effects", "flash_duration", default=200)
-        self.flash_color = (255, 0, 0)  # Default to red
+        self.flash_color = (255, 0, 0)  # Red by default
 
         logger.debug(f"Enemy {self.id} of type {self.enemy_type} created at {position}")
 
-    def can_collide(self, current_time):
-        """Check if the enemy can collide with the player based on cooldown."""
+    def can_collide(self, current_time: int) -> bool:
+        """Check if the enemy can collide based on cooldown."""
         if current_time - self.last_collision_time > self.collision_cooldown:
             self.last_collision_time = current_time
             return True
         return False
 
-    def move_towards(self, target_position):
-        """Move the enemy towards the target position."""
-        # Calculate direction vector
+    def move_towards(self, target_position: tuple[float, float]) -> float:
+        """Move the enemy towards the target position and return distance."""
         dx = target_position[0] - self.position[0]
         dy = target_position[1] - self.position[1]
-
-        # Calculate distance and direction
         distance = math.sqrt(dx**2 + dy**2)
-        if distance > 0:  # Only move if not at target
-            # Normalize and apply speed
+        if distance > 0:
             dx = (dx / distance) * self.speed
             dy = (dy / distance) * self.speed
-
-            # Move in the normalized direction
             self.position[0] += dx
             self.position[1] += dy
-
-            # Update rect position
             self.rect.x = round(self.position[0])
             self.rect.y = round(self.position[1])
-
         return distance
 
     def update(
         self, player_position=None, current_time=None, projectile_group=None, all_sprites=None
     ):
-        """
-        Update enemy state.
-        """
+        """Update enemy state."""
         if player_position:
             self.move_towards(player_position)
-
-        # Apply any visual effects
         self.apply_visual_effects()
 
     def apply_visual_effects(self):
-        """Apply visual effects like flashing to the enemy sprite."""
+        """Apply visual effects like flashing to the sprite."""
         update_mask = False
-
         if self.flash_effect:
             current_time = pygame.time.get_ticks()
             if current_time - self.flash_timer > self.flash_duration:
                 self.flash_effect = False
-                # Restore original image when flash effect ends
                 self.image = self.original_image.copy()
                 update_mask = True
             else:
-                # Flash between original image and colored overlay
-                flash_interval = 50  # milliseconds
+                flash_interval = 50
                 if (current_time // flash_interval) % 2 == 0:
                     self.image = self.original_image.copy()
                 else:
-                    # Create a colored overlay using mask for pixel-perfect effect
                     overlay = pygame.Surface(self.image.get_size(), pygame.SRCALPHA)
-                    flash_color_with_alpha = self.flash_color + (150,)  # Add 150 alpha
+                    flash_color_with_alpha = self.flash_color + (150,)
                     overlay.fill(flash_color_with_alpha)
-
-                    # Apply the overlay only to non-transparent pixels
                     temp_image = self.original_image.copy()
                     temp_image.blit(overlay, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
                     self.image = temp_image
                 update_mask = True
-
-        # Update the mask if the image has changed
         if update_mask:
             self.mask = pygame.mask.from_surface(self.image)
 
-    def flash_red(self):
-        """Legacy method - calls start_flash_effect with red color for backward compatibility."""
-        self.start_flash_effect((255, 0, 0))
-
-    def start_flash_effect(self, color):
+    def start_flash_effect(self, color: tuple[int, int, int]):
         """Start a flash effect with the given color."""
         self.flash_effect = True
         self.flash_timer = pygame.time.get_ticks()
         self.flash_color = color
         logger.debug(f"Enemy {self.id} started flash effect with color {color}")
 
-    def take_damage(self, amount):
-        """
-        Apply damage to the enemy.
+    def flash_red(self):
+        """Trigger a red flash effect (legacy method)."""
+        self.start_flash_effect((255, 0, 0))
 
-        Args:
-            amount: Amount of damage to apply
-
-        Returns:
-            bool: True if the enemy died, False otherwise
-        """
+    def take_damage(self, amount: int) -> bool:
+        """Apply damage and return True if enemy dies."""
         self.health -= amount
         logger.debug(
             f"Enemy {self.id} took {amount} damage. Health: {self.health}/{self.max_health}"
         )
-
-        # Flash red briefly when taking damage
         self.flash_red()
-
         if self.health <= 0:
             self.kill()
             logger.debug(f"Enemy {self.id} died")
@@ -183,157 +151,101 @@ class Enemy(pygame.sprite.Sprite):
 
 
 class RangedEnemy(Enemy):
-    """Enemy that stays at a distance and shoots projectiles at the player."""
+    """Enemy that maintains distance and shoots projectiles."""
 
     def __init__(self, position):
         super().__init__(position, Enemy.TYPE_RANGED)
-
-        # Ranged enemy specific attributes
+        # Cache ranged-specific attributes
         self.preferred_distance = config.get("enemy", "ranged", "preferred_distance", default=200)
-        self.attack_cooldown = config.get("enemy", "ranged", "attack_cooldown", default=2000)  # ms
-        self.projectile_speed = config.get(
-            "enemy", "ranged", "projectile_speed", default=3
-        )  # Reduced from 5 for better visibility
+        self.attack_cooldown = config.get("enemy", "ranged", "attack_cooldown", default=2000)
+        self.projectile_speed = config.get("enemy", "ranged", "projectile_speed", default=3)
         self.projectile_damage = config.get("enemy", "ranged", "projectile_damage", default=5)
-        self.last_shot_time = 0
-
-        # Ranged enemies move slower but still fast enough to show movement
         self.speed = config.get("enemy", "ranged", "speed", default=4)
-
+        self.last_shot_time = 0
         logger.debug(f"Ranged Enemy {self.id} created")
 
     def update(
         self, player_position=None, current_time=None, projectile_group=None, all_sprites=None
     ):
-        """
-        Update ranged enemy behavior.
-        """
-        if not player_position:
-            return
-
-        # In test environment, ensure we always move toward the player initially
-        if current_time is None or projectile_group is None or all_sprites is None:
+        """Update ranged enemy behavior."""
+        if (
+            not player_position
+            or current_time is None
+            or projectile_group is None
+            or all_sprites is None
+        ):
             super().move_towards(player_position)
             return
-
-        # Regular game logic below
-        # Calculate distance to player
         dx = player_position[0] - self.position[0]
         dy = player_position[1] - self.position[1]
         distance = math.sqrt(dx**2 + dy**2)
-
-        # Always move initially, then maintain preferred distance
-        if distance > self.preferred_distance + 50:  # Move closer if too far
+        if distance > self.preferred_distance + 50:
             super().move_towards(player_position)
-        elif distance < self.preferred_distance - 50:  # Move away if too close
-            away_position = (
-                self.position[0] - dx * 2,  # Move away more aggressively
-                self.position[1] - dy * 2,
-            )
+        elif distance < self.preferred_distance - 50:
+            away_position = (self.position[0] - dx * 2, self.position[1] - dy * 2)
             self.move_towards(away_position)
-
-        # Shoot at player if cooldown has elapsed
         if current_time - self.last_shot_time > self.attack_cooldown:
             self.shoot_at_player(player_position, projectile_group, all_sprites)
             self.last_shot_time = current_time
-
-        # Apply visual effects
         super().apply_visual_effects()
 
     def shoot_at_player(self, player_position, projectile_group, all_sprites):
         """Shoot a projectile at the player."""
-        # Calculate direction to player
         dx = player_position[0] - self.position[0]
         dy = player_position[1] - self.position[1]
-
-        # Normalize direction
         distance = max(1, math.sqrt(dx**2 + dy**2))
         normalized_dx = dx / distance
         normalized_dy = dy / distance
-
-        # Set velocity based on normalized direction and speed
-        velocity_dx = normalized_dx * self.projectile_speed
-        velocity_dy = normalized_dy * self.projectile_speed
-
-        # Create projectile - start from edge of enemy sprite, not center
-        # This helps prevent immediate self-collisions
+        velocity = (normalized_dx * self.projectile_speed, normalized_dy * self.projectile_speed)
         start_pos = (
             self.rect.centerx + normalized_dx * self.rect.width * 0.6,
             self.rect.centery + normalized_dy * self.rect.height * 0.6,
         )
-
-        # Pass map dimensions to the projectile if we have them
         map_width = getattr(self, "map_width", None)
         map_height = getattr(self, "map_height", None)
-
         projectile = Projectile(
             start_pos,
-            (velocity_dx, velocity_dy),
+            velocity,
             damage=self.projectile_damage,
             is_enemy_projectile=True,
             map_width=map_width,
             map_height=map_height,
         )
-
-        # Add to groups - ensure it's added to both groups properly
         projectile_group.add(projectile)
         all_sprites.add(projectile)
-
-        logger.debug(
-            f"Ranged Enemy {self.id} fired projectile at player with velocity {(velocity_dx, velocity_dy)}"
-        )
-
+        logger.debug(f"Ranged Enemy {self.id} fired projectile with velocity {velocity}")
         return projectile
 
 
 class ChargerEnemy(Enemy):
-    """Enemy that charges at the player when within a certain range."""
+    """Enemy that charges at the player when in range."""
 
     def __init__(self, position):
         super().__init__(position, Enemy.TYPE_CHARGER)
-
-        # Charger enemy specific attributes
+        # Cache charger-specific attributes
         self.charge_distance = config.get("enemy", "charger", "charge_distance", default=150)
-        self.charge_cooldown = config.get("enemy", "charger", "charge_cooldown", default=3000)  # ms
-        self.charge_duration = config.get("enemy", "charger", "charge_duration", default=1000)  # ms
+        self.charge_cooldown = config.get("enemy", "charger", "charge_cooldown", default=3000)
+        self.charge_duration = config.get("enemy", "charger", "charge_duration", default=1000)
         self.charge_speed_multiplier = config.get(
             "enemy", "charger", "charge_speed_multiplier", default=3
         )
         self.normal_speed = config.get("enemy", "charger", "speed", default=4.5)
         self.speed = self.normal_speed
-
-        # Charge state
+        self.max_health = config.get("enemy", "charger", "max_health", default=50)
+        self.health = self.max_health
         self.is_charging = False
         self.charge_start_time = 0
         self.last_charge_time = 0
         self.charge_direction = (0, 0)
-
-        # Chargers have more health
-        self.max_health = config.get("enemy", "charger", "max_health", default=50)
-        self.health = self.max_health
-
         logger.debug(f"Charger Enemy {self.id} created")
 
     def update(
         self, player_position=None, current_time=None, projectile_group=None, all_sprites=None
     ):
-        """
-        Update charger enemy behavior.
-        """
-        if not player_position:
-            return
-
-        # In test environment, ensure we always move toward the player initially
-        if current_time is None:
+        """Update charger enemy behavior."""
+        if not player_position or current_time is None:
             super().move_towards(player_position)
             return
-
-        # Calculate distance to player
-        dx = player_position[0] - self.position[0]
-        dy = player_position[1] - self.position[1]
-        distance = math.sqrt(dx**2 + dy**2)
-
-        # If currently charging
         if self.is_charging:
             if current_time - self.charge_start_time > self.charge_duration:
                 self.end_charge()
@@ -342,12 +254,11 @@ class ChargerEnemy(Enemy):
                 self.position[1] += self.charge_direction[1] * self.speed
                 self.rect.x = round(self.position[0])
                 self.rect.y = round(self.position[1])
-
-                # Apply visual effects
                 super().apply_visual_effects()
                 return
-
-        # Always move initially, then check for charge
+        dx = player_position[0] - self.position[0]
+        dy = player_position[1] - self.position[1]
+        distance = math.sqrt(dx**2 + dy**2)
         if (
             distance < self.charge_distance
             and current_time - self.last_charge_time > self.charge_cooldown
@@ -355,64 +266,38 @@ class ChargerEnemy(Enemy):
             self.start_charge(player_position, current_time)
         else:
             super().move_towards(player_position)
-
-        # Apply visual effects
         super().apply_visual_effects()
 
-    def start_charge(self, player_position, current_time):
-        """Start a charge attack toward the player's position."""
+    def start_charge(self, player_position, current_time: int):
+        """Initiate a charge towards the player."""
         self.is_charging = True
         self.charge_start_time = current_time
         self.last_charge_time = current_time
-
-        # Calculate direction to player
         dx = player_position[0] - self.position[0]
         dy = player_position[1] - self.position[1]
-
-        # Normalize direction
         distance = max(1, math.sqrt(dx**2 + dy**2))
         self.charge_direction = (dx / distance, dy / distance)
-
-        # Increase speed during charge
         self.speed = self.normal_speed * self.charge_speed_multiplier
-
         logger.debug(f"Charger Enemy {self.id} started charge attack")
 
     def end_charge(self):
-        """End the charge attack."""
+        """End the charge and reset speed."""
         self.is_charging = False
         self.speed = self.normal_speed
         logger.debug(f"Charger Enemy {self.id} ended charge attack")
 
 
 def create_enemy(position, enemy_type=None):
-    """
-    Factory function to create an enemy of the specified type.
-
-    Args:
-        position: Position to create the enemy at
-        enemy_type: Type of enemy to create, if None a random type is chosen
-
-    Returns:
-        An enemy instance
-    """
+    """Factory function to create an enemy instance."""
     if enemy_type is None:
-        # Weighted random selection - basic enemies are more common
         weights = config.get(
             "enemy",
             "spawn_weights",
             default={Enemy.TYPE_BASIC: 60, Enemy.TYPE_RANGED: 20, Enemy.TYPE_CHARGER: 20},
         )
-
-        # Convert weights to list for random.choices
-        enemy_types = list(weights.keys())
-        weights_list = list(weights.values())
-
-        enemy_type = random.choices(enemy_types, weights=weights_list, k=1)[0]
-
+        enemy_type = random.choices(list(weights.keys()), list(weights.values()), k=1)[0]
     if enemy_type == Enemy.TYPE_RANGED:
         return RangedEnemy(position)
     elif enemy_type == Enemy.TYPE_CHARGER:
         return ChargerEnemy(position)
-    else:
-        return Enemy(position)
+    return Enemy(position)

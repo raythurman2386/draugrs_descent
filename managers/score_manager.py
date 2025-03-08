@@ -8,18 +8,24 @@ logger = GameLogger.get_logger("scoring")
 
 
 class ScoreManager:
-    """Manages game scoring and high score tracking."""
+    """Manages game scoring and high score tracking with a time-based multiplier."""
 
     # Score values for different game events
     ENEMY_DEFEAT_POINTS = 100
     POWERUP_COLLECTED_POINTS = 50
     POINTS_PER_SECOND = 1  # Points per second survived
 
+    # Multiplier settings
+    MULTIPLIER_INCREMENT = 0.25  # Amount to increase multiplier each time
+    TIME_PER_INCREMENT = 180  # Seconds between multiplier increments
+    MAX_MULTIPLIER = 5.0  # Maximum multiplier value
+
     def __init__(self):
         """Initialize the score manager."""
         self.current_score = 0
         self.high_score = 0
         self.score_multiplier = 1.0
+        self.total_time_survived = 0  # Track total survival time in seconds
 
         # Attempt to load high score from file
         self.load_high_score()
@@ -49,18 +55,35 @@ class ScoreManager:
         logger.debug(f"Powerup collected: +{self.POWERUP_COLLECTED_POINTS} points")
 
     def add_time_survived_points(self, seconds):
-        """Add points based on time survived."""
+        """Add points based on time survived and update multiplier if necessary."""
+        # Add points for time survived
         points = seconds * self.POINTS_PER_SECOND
         self.add_score(points)
         logger.debug(f"Time survived: +{points} points for {seconds} seconds")
 
+        # Update total time survived
+        self.total_time_survived += seconds
+
+        # Check if it's time to increment the multiplier
+        if self.total_time_survived >= self.TIME_PER_INCREMENT:
+            increments = self.total_time_survived // self.TIME_PER_INCREMENT
+            for _ in range(int(increments)):
+                if self.score_multiplier < self.MAX_MULTIPLIER:
+                    self.score_multiplier += self.MULTIPLIER_INCREMENT
+                    logger.info(f"Score multiplier increased to {self.score_multiplier}")
+                else:
+                    logger.info(f"Score multiplier reached maximum: {self.MAX_MULTIPLIER}")
+            # Reset remainder of time after increments
+            self.total_time_survived %= self.TIME_PER_INCREMENT
+
     def reset_current_score(self):
-        """Reset the current score back to zero."""
+        """Reset the current score and total time survived back to zero."""
         self.current_score = 0
-        logger.info("Score reset to 0")
+        self.total_time_survived = 0
+        logger.info("Score and survival time reset to 0")
 
     def set_multiplier(self, multiplier):
-        """Set the score multiplier."""
+        """Set the score multiplier manually."""
         self.score_multiplier = multiplier
         logger.debug(f"Score multiplier set to {multiplier}")
 

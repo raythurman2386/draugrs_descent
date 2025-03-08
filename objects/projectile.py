@@ -12,48 +12,47 @@ class Projectile(pygame.sprite.Sprite):
 
     def __init__(
         self,
-        position,
-        velocity,
-        damage=None,
-        is_enemy_projectile=False,
-        map_width=None,
-        map_height=None,
+        position: tuple[float, float],
+        velocity: tuple[float, float],
+        damage: int = None,
+        is_enemy_projectile: bool = False,
+        map_width: int = None,
+        map_height: int = None,
     ):
         super().__init__()
         # Assign a unique ID to each projectile
         self.id = Projectile.next_id
         Projectile.next_id += 1
 
-        # Get projectile dimensions from config
-        width = config.get("projectile", "dimensions", "width", default=10)
-        height = config.get("projectile", "dimensions", "height", default=10)
+        # Cache projectile dimensions from config
+        self.width = config.get("projectile", "dimensions", "width", default=10)
+        self.height = config.get("projectile", "dimensions", "height", default=10)
 
-        self.image = pygame.Surface((width, height))
+        # Create projectile image
+        self.image = pygame.Surface((self.width, self.height))
 
-        # Set color based on whether it's an enemy projectile or player projectile
-        if is_enemy_projectile:
-            self.image.fill(config.get_color("red"))
-        else:
-            self.image.fill(config.get_color("white"))
+        # Cache color based on projectile type
+        self.color = config.get_color("red") if is_enemy_projectile else config.get_color("white")
+        self.image.fill(self.color)
 
-        self.rect = self.image.get_rect()
-        self.rect.center = position
+        # Set initial position and velocity
+        self.rect = self.image.get_rect(center=position)
         self.position = list(position)
         self.velocity = velocity
         self.is_enemy_projectile = is_enemy_projectile
 
-        # Get damage from config if not provided
+        # Cache damage from config if not provided
         self.damage = (
             damage
             if damage is not None
             else config.get("projectile", "attributes", "damage", default=10)
         )
 
-        # Store map dimensions for boundary checking
+        # Cache map dimensions for boundary checking
         self.map_width = map_width or config.get("screen", "width", default=800)
         self.map_height = map_height or config.get("screen", "height", default=600)
 
-        # Add margin for off-screen detection
+        # Cache off-screen margin
         self.off_screen_margin = config.get("projectile", "off_screen_margin", default=100)
 
         self.active = True
@@ -62,7 +61,7 @@ class Projectile(pygame.sprite.Sprite):
         )
 
     def update(self):
-        """Update the projectile position based on velocity."""
+        """Update the projectile position based on velocity and check boundaries."""
         self.position[0] += self.velocity[0]
         self.position[1] += self.velocity[1]
         self.rect.center = (int(self.position[0]), int(self.position[1]))

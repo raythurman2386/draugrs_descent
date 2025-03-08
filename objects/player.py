@@ -41,13 +41,11 @@ class Player(pygame.sprite.Sprite):
             "player", "attributes", "invincibility_duration", default=1000
         )
 
-        # Set up shot cooldown - explicitly log the config value
+        # Set up shot cooldown
         config_shot_cooldown = config.get("player", "attributes", "shot_cooldown", default=500)
         logger.info(f"Player initialized with shot cooldown from config: {config_shot_cooldown}ms")
         self.last_shot_time = 0
         self.shot_cooldown = config_shot_cooldown
-
-        # Store the base cooldown for reference and restoration after powerups
         self.base_shot_cooldown = config_shot_cooldown
         logger.debug(f"Base shot cooldown set to: {self.base_shot_cooldown}ms")
 
@@ -74,6 +72,11 @@ class Player(pygame.sprite.Sprite):
         # Map boundaries for clamping movement
         self.map_width = None
         self.map_height = None
+
+        # Cache frequently used config values for performance
+        self.movement_speed = config.get("player", "attributes", "movement_speed", default=5)
+        self.shooting_range = config.get("mechanics", "player", "shooting_range", default=250)
+        self.projectile_speed = config.get("projectile", "attributes", "speed", default=10)
 
         logger.info(f"Player initialized with {player_color} character sprite")
 
@@ -121,20 +124,21 @@ class Player(pygame.sprite.Sprite):
             self.mask = pygame.mask.from_surface(self.image)
 
     def update(self):
+        """Update player state including movement, shooting, and effects."""
         # Handle player movement
         keys = pygame.key.get_pressed()
         moving = False
         if keys[pygame.K_LEFT]:
-            self.rect.x -= config.get("player", "attributes", "movement_speed", default=5)
+            self.rect.x -= self.movement_speed
             moving = True
         if keys[pygame.K_RIGHT]:
-            self.rect.x += config.get("player", "attributes", "movement_speed", default=5)
+            self.rect.x += self.movement_speed
             moving = True
         if keys[pygame.K_UP]:
-            self.rect.y -= config.get("player", "attributes", "movement_speed", default=5)
+            self.rect.y -= self.movement_speed
             moving = True
         if keys[pygame.K_DOWN]:
-            self.rect.y += config.get("player", "attributes", "movement_speed", default=5)
+            self.rect.y += self.movement_speed
             moving = True
 
         # Clamp to map boundaries
@@ -216,14 +220,13 @@ class Player(pygame.sprite.Sprite):
                 dy = closest_enemy.rect.centery - self.rect.centery
                 distance = math.sqrt(dx**2 + dy**2)
 
-                # Get shooting range from config
-                shooting_range = config.get("mechanics", "player", "shooting_range", default=250)
-
                 # Only shoot if enemy is within range
-                if distance <= shooting_range:
+                if distance <= self.shooting_range:
                     # Calculate velocity towards the enemy
-                    projectile_speed = config.get("projectile", "attributes", "speed", default=10)
-                    velocity = (dx / distance * projectile_speed, dy / distance * projectile_speed)
+                    velocity = (
+                        dx / distance * self.projectile_speed,
+                        dy / distance * self.projectile_speed,
+                    )
 
                     # Pass map dimensions to the projectile if we have them
                     map_width = getattr(self, "map_width", None)
@@ -245,7 +248,7 @@ class Player(pygame.sprite.Sprite):
                     return projectile
                 else:
                     logger.debug(
-                        f"Enemy at distance {distance} is beyond shooting range of {shooting_range}"
+                        f"Enemy at distance {distance} is beyond shooting range of {self.shooting_range}"
                     )
             else:
                 logger.debug("No valid target found")
@@ -278,14 +281,12 @@ class Player(pygame.sprite.Sprite):
     def activate_weapon_boost(
         self, duration=config.get("powerups", "weapon_boost", "duration", default=5000)
     ):
-        """Activate the weapon boost power-up."""
+        """Activate the weapon boost power-up, halving base cooldown."""
         self.weapon_boost_active = True
         self.weapon_boost_timer = pygame.time.get_ticks()
         self.weapon_boost_duration = duration
-        # Store original cooldown as base for later restoration
-        self.base_shot_cooldown = self.shot_cooldown
-        # Cut cooldown in half (fire twice as fast)
-        self.shot_cooldown = self.shot_cooldown // 2
+        # Set shot cooldown to half of base value to prevent stacking
+        self.shot_cooldown = self.base_shot_cooldown // 2
         logger.debug(f"Weapon boost activated for {duration}ms. Cooldown: {self.shot_cooldown}ms")
         # Visual feedback for power-up
         self.start_flash_effect(config.get_color("yellow"))
