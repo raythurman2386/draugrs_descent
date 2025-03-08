@@ -212,16 +212,12 @@ class GameScene(Scene):
         )
 
     def pause_game(self):
-        """Pause the game and switch to the pause menu."""
-        if not self.paused:
-            logger.info("Game paused")
-            self.paused = True
-
-            # Stop the game music before switching to pause menu
-            self.sound_manager.stop_music()
-
-            # Change state to PAUSED and switch scene
+        """Pause the game."""
+        if game_state.current_state == GameState.PLAYING:
+            # Change state to PAUSED
             game_state.change_state(GameState.PAUSED)
+
+            # Use scene manager's transition system
             self.switch_to_scene("pause")
 
     def handle_event(self, event):
@@ -229,13 +225,67 @@ class GameScene(Scene):
         # Check for quit event
         if event.type == pygame.QUIT:
             self.should_exit = True
+            # Save high score before exiting
+            self.score_manager.save_high_score()
             return True
 
         # Check for pause toggle
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             if not self.paused:
                 self.pause_game()
-                return
+                return True  # Event handled
+
+        # Note: Player input is handled directly in the Player.update method
+        # through pygame.key.get_pressed(), not through events
+        return False  # Event not handled
+
+    def switch_to_scene(self, scene_name):
+        """Override the base switch_to_scene to manage cleanup properly."""
+        # Only save score and clean up if we're completely exiting the game
+        # (not if we're just pausing or going to options)
+        if scene_name not in ["pause", "options"]:
+            logger.info(f"Exiting game scene to {scene_name}, saving high score")
+            self.score_manager.save_high_score()
+            self.cleanup()
+
+        # Use base Scene transition system
+        super().switch_to_scene(scene_name)
+
+    def cleanup(self):
+        """Clean up resources when completely leaving the scene."""
+        logger.info("Cleaning up GameScene resources")
+
+        # Clear references to tiledmap and renderer
+        self.map_renderer = None
+
+        # Clear sprite groups to prevent memory leaks
+        if hasattr(self, "all_sprites"):
+            self.all_sprites.empty()
+        if hasattr(self, "enemy_group"):
+            self.enemy_group.empty()
+        if hasattr(self, "powerup_group"):
+            self.powerup_group.empty()
+        if hasattr(self, "projectile_group"):
+            self.projectile_group.empty()
+
+        # Reset camera
+        if hasattr(self, "camera"):
+            self.camera.reset()
+
+        # Stop any game-specific sounds
+        self.sound_manager.stop_all_sounds()
+
+    def resume_from_pause(self):
+        """Resume the game after returning from pause menu."""
+        self.paused = False
+
+        # Reset game state to PLAYING
+        game_state.change_state(GameState.PLAYING)
+
+        # Play game music again (since we might have stopped it when pausing)
+        self.play_scene_music("game")
+
+        logger.info("Game resumed from pause")
 
     def _handle_collisions(self):
         """Check for and handle all collisions."""
@@ -594,15 +644,3 @@ class GameScene(Scene):
         self.draw_text(
             high_score_text, (255, 165, 0), screen_width // 2, 50
         )  # Orange color for high score
-
-    def resume_from_pause(self):
-        """Resume the game after returning from pause menu."""
-        self.paused = False
-
-        # Reset game state to PLAYING
-        game_state.change_state(GameState.PLAYING)
-
-        # Play game music again (since we might have stopped it when pausing)
-        self.play_scene_music("game")
-
-        logger.info("Game resumed from pause")

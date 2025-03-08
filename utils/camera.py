@@ -124,7 +124,14 @@ class Camera:
         # Apply base camera offset plus any shake offset
         offset_x = self.camera.x + self.shake_offset[0]
         offset_y = self.camera.y + self.shake_offset[1]
-        return entity.rect.move(offset_x, offset_y)
+
+        # Return a new rect for the entity, offset by the camera position
+        return pygame.Rect(
+            entity.rect.x + offset_x,
+            entity.rect.y + offset_y,
+            entity.rect.width,
+            entity.rect.height,
+        )
 
     def apply_rect(self, rect):
         """
@@ -150,3 +157,13 @@ class Camera:
         """
         # Include shake offset in the camera offset
         return (self.camera.x + self.shake_offset[0], self.camera.y + self.shake_offset[1])
+
+    def reset(self):
+        """Reset the camera to its initial state."""
+        self.camera.x = 0
+        self.camera.y = 0
+        self.shake_duration = 0
+        self.shake_intensity = 0
+        self.shake_start_time = 0
+        self.shake_offset = (0, 0)
+        logger.debug("Camera reset to initial state")
