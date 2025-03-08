@@ -1,6 +1,7 @@
 pygame>=2.6.1
-black>=24.3.0
-pytest>=7.4.3
+black>=25.1.0
+pytest>=8.3.5
 pytest-mock>=3.14.0
-pytest-cov>=4.1.0
-pytest-asyncio>=0.21.0
+pytest-cov>=6.0.0
+pytest-asyncio>=0.25.3
+pyyaml>=6.0.2
