@@ -161,19 +161,25 @@ class GameScene(Scene):
 
     def cleanup(self):
         """Release resources when leaving the scene."""
-        logger.info("Cleaning up GameScene")
+        logger.info("Cleaning up GameScene resources")
+
+        # Clear references to tiledmap and renderer
         self.map_renderer = None
+
+        # Clear sprite groups to prevent memory leaks
         for group in [
             self.all_sprites,
             self.enemy_group,
             self.projectile_group,
             self.powerup_group,
         ]:
-            if hasattr(self, group.__name__):
+            if group:  # Simply check if the group exists
                 group.empty()
+                
+        # Reset camera
         if self.camera:
             self.camera.reset()
-        self.sound_manager.stop_all_sounds()
+        self.sound_manager.stop_music()
 
     def resume_from_pause(self):
         """Resume game from pause state."""
