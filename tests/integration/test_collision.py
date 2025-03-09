@@ -14,8 +14,10 @@ class TestCollisionDetection:
         """Test that player and enemy collisions are properly detected and handled."""
         # Create a player and an enemy at the same position
         player = Player((100, 100))
+        player.invincibility_timer = 0  # Make sure player is not invincible
         initial_health = player.current_health
         enemy = Enemy((100, 100))
+        enemy.damage = 20  # Ensure enemy does enough damage to be noticeable
 
         # Manual collision detection and handling
         collided = pygame.sprite.collide_rect(player, enemy)

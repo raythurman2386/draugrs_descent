@@ -48,12 +48,12 @@ This document outlines the planned development path for Draugr's Descent, organi
 ### Game Modes Implementation Details
 
 #### Endless Mode Architecture
-- Create a `WaveManager` class to handle:
+- [x] Create a `WaveManager` class to handle:
   - Progressive wave difficulty
   - Enemy count scaling
   - Spawn rate adjustment
   - Boss wave integration
-- Required components:
+- [x] Required components:
   - New `managers/wave_manager.py` file
   - UI elements for wave indicators
   - Wave transition effects

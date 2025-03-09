@@ -26,6 +26,8 @@ class Scene:
         self.font = self.asset_manager.get_font("default", "normal")
         self.ui_font = self.asset_manager.get_font("square", "ui")
         self.small_font = self.asset_manager.get_font("default", "small")
+        self.extra_small_font = self.asset_manager.get_font("default", "extra_small")
+        self.tiny_font = self.asset_manager.get_font("default", "tiny")
         self.narrow_font = self.asset_manager.get_font("narrow", "normal")
 
     def process_events(self, events):

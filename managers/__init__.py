@@ -4,7 +4,7 @@ from .sound_manager import SoundManager, game_sound_manager
 from .score_manager import ScoreManager
 from .config_manager import config
 from .asset_manager import AssetManager, game_asset_manager
-
+from .wave_manager import WaveManager
 
 __all__ = [
     "SceneManager",
@@ -16,4 +16,5 @@ __all__ = [
     "AssetManager",
     "game_asset_manager",
     "config",
+    "WaveManager",
 ]

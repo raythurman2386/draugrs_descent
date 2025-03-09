@@ -15,6 +15,7 @@ colors:
   yellow: [255, 255, 0]
   purple: [255, 0, 255]
   dark_blue: [20, 30, 50]  # Added for menu background
+  dark_grey: [50, 50, 50]  # Added for UI elements
 
 # Game Mechanics
 mechanics:
@@ -59,6 +60,11 @@ enemy:
       color: "red"  # Ranged enemies will use red character sprite
     charger:
       color: "yellow"  # Charger enemies will use yellow character sprite
+  behavior:
+    separation_radius: 60
+    separation_weight: 1.0
+    target_approach_weight: 1.0
+    position_jitter: 0.3
   # New enemy type settings
   ranged:
     preferred_distance: 200
@@ -90,6 +96,11 @@ projectile:
 
 # UI Elements
 ui:
+  colors:
+    health_bar_background: "dark_grey"
+    health_bar_fill: "green"
+    health_bar_border: "black"
+    text: "white"
   # General UI settings
   default_theme: "blue"  # Default UI theme color
   available_themes: ["blue", "green", "grey", "red", "yellow"]
@@ -210,6 +221,33 @@ ui:
       spacing: 60
       font_size: 24
       text_color: white
+
+# Wave System Configuration
+waves:
+  transition_duration: 3000  # milliseconds for wave transition announcements
+  boss_wave_frequency: 5  # Boss wave every X waves
+  base_enemies_per_wave: 10  # Starting number of enemies in wave 1
+  enemies_increase_per_wave: 3  # Additional enemies added each wave
+  max_enemies_per_wave: 50  # Maximum enemies per wave
+  base_spawn_interval: 1000  # milliseconds between enemy spawns in wave 1
+  min_spawn_interval: 200  # Minimum milliseconds between spawns (fastest possible)
+  spawn_interval_decrease: 50  # Decrease in spawn interval per wave
+  
+  # Scaling factors for enemy attributes per wave
+  enemy_health_scaling: 0.1  # 10% increase in health per wave
+  enemy_damage_scaling: 0.05  # 5% increase in damage per wave
+  enemy_speed_scaling: 0.03  # 3% increase in speed per wave
+  
+  # Boss wave specific multipliers
+  boss_health_multiplier: 5.0  # Boss enemies have 5x health
+  boss_damage_multiplier: 2.0  # Boss enemies have 2x damage
+  
+  # Enemy type distribution by wave (percentage of each type)
+  enemy_distribution:
+    wave1: {"basic": 100, "ranged": 0, "charger": 0}  # Wave 1: 100% basic enemies
+    wave5: {"basic": 60, "ranged": 30, "charger": 10}  # Wave 5: 60% basic, 30% ranged, 10% charger
+    wave10: {"basic": 40, "ranged": 40, "charger": 20}  # Wave 10: 40% basic, 40% ranged, 20% charger
+    wave20: {"basic": 30, "ranged": 40, "charger": 30}  # Wave 20: 30% basic, 40% ranged, 30% charger
 
 # Effect settings
 effects:

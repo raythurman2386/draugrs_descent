@@ -29,6 +29,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Particle effects system for projectile hits, enemy deaths, and powerup collection
 - Screen shake effect when player takes damage
 - Unit tests for particle system to ensure proper behavior
+- Wave management system for Endless Mode with dynamic difficulty scaling
+- Enemy attribute scaling based on wave progression
+- Wave transition UI with announcements for upcoming waves
+- Boss wave mechanics with enhanced enemy attributes
+- Wave information display in game HUD showing current wave and remaining enemies
+- Comprehensive unit and integration tests for wave system functionality
+- Enemy movement enhancement
 
 ### Changed
 - Refactored monolithic game class into scene-based architecture
@@ -38,10 +45,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added safeguards to prevent shot cooldown issues during long gameplay sessions
 - Improved sound effect logic for player shooting
 - Improved configuration access for screen dimensions and colors
-- Optimized collision detection for improved performance
 
 ### Fixed
 - Projectile issues where projectiles weren't appearing on screen
+
+## [0.9.0] - In Development
+
+### Added
+- Wave management system to handle enemy spawning and difficulty progression
+- Enhanced collision detection between players and enemies
+- Separation behavior for enemies to prevent bunching up during movement
+- Wave transition UI elements and effects
+
+### Fixed
+- Corrected collision test to ensure proper damage application
+- Fixed wave transition timer issues in the game scene
+- Improved score display by using the correct property name
 
 ## [0.1.0] - 2025-03-02
 

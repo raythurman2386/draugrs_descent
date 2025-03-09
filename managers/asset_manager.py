@@ -32,6 +32,8 @@ class AssetManager:
         "normal": 28,
         "ui": 24,
         "small": 20,
+        "extra_small": 16,
+        "tiny": 12,
     }
 
     # UI color schemes

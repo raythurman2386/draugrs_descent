@@ -61,6 +61,16 @@ class Enemy(pygame.sprite.Sprite):
         )
         self.last_collision_time = 0
 
+        # Separation settings for preventing bunching
+        self.separation_radius = config.get("enemy", "behavior", "separation_radius", default=60)
+        self.separation_weight = config.get("enemy", "behavior", "separation_weight", default=1.0)
+        self.target_approach_weight = config.get(
+            "enemy", "behavior", "target_approach_weight", default=1.0
+        )
+
+        # Add a slight randomness to movement to prevent perfect alignment
+        self.position_jitter = config.get("enemy", "behavior", "position_jitter", default=0.3)
+
         # Store original image for effects
         self.original_image = self.image.copy()
 
@@ -79,26 +89,92 @@ class Enemy(pygame.sprite.Sprite):
             return True
         return False
 
-    def move_towards(self, target_position: tuple[float, float]) -> float:
-        """Move the enemy towards the target position and return distance."""
+    def move_towards(self, target_position: tuple[float, float], nearby_enemies=None) -> float:
+        """Move the enemy towards the target position while avoiding other enemies.
+
+        Args:
+            target_position: Position to move towards
+            nearby_enemies: List of nearby enemies to avoid
+
+        Returns:
+            Distance to target
+        """
+        # Calculate direction to target
         dx = target_position[0] - self.position[0]
         dy = target_position[1] - self.position[1]
         distance = math.sqrt(dx**2 + dy**2)
+
         if distance > 0:
-            dx = (dx / distance) * self.speed
-            dy = (dy / distance) * self.speed
-            self.position[0] += dx
-            self.position[1] += dy
+            # Normalize direction vector
+            dx = dx / distance
+            dy = dy / distance
+
+            # Add separation behavior if we have nearby enemies
+            separation_dx, separation_dy = 0, 0
+
+            if nearby_enemies:
+                for enemy in nearby_enemies:
+                    if enemy.id != self.id:  # Don't avoid self
+                        # Calculate vector from other enemy to this enemy
+                        sep_dx = self.position[0] - enemy.position[0]
+                        sep_dy = self.position[1] - enemy.position[1]
+                        sep_dist = math.sqrt(sep_dx**2 + sep_dy**2)
+
+                        # Only apply separation if within radius
+                        if 0 < sep_dist < self.separation_radius:
+                            # The closer they are, the stronger the separation
+                            separation_factor = 1.0 - (sep_dist / self.separation_radius)
+
+                            # Normalize and weight by how close they are
+                            if sep_dist > 0:  # Avoid division by zero
+                                separation_dx += (sep_dx / sep_dist) * separation_factor
+                                separation_dy += (sep_dy / sep_dist) * separation_factor
+
+            # Normalize separation vector if it's not zero
+            sep_magnitude = math.sqrt(separation_dx**2 + separation_dy**2)
+            if sep_magnitude > 0:
+                separation_dx /= sep_magnitude
+                separation_dy /= sep_magnitude
+
+            # Combine approach and separation vectors with weights
+            combined_dx = (dx * self.target_approach_weight) + (
+                separation_dx * self.separation_weight
+            )
+            combined_dy = (dy * self.target_approach_weight) + (
+                separation_dy * self.separation_weight
+            )
+
+            # Normalize the combined vector
+            combined_magnitude = math.sqrt(combined_dx**2 + combined_dy**2)
+            if combined_magnitude > 0:
+                combined_dx /= combined_magnitude
+                combined_dy /= combined_magnitude
+
+            # Add small random variation to prevent perfect alignment
+            combined_dx += (random.random() * 2 - 1) * self.position_jitter
+            combined_dy += (random.random() * 2 - 1) * self.position_jitter
+
+            # Apply speed
+            self.position[0] += combined_dx * self.speed
+            self.position[1] += combined_dy * self.speed
+
+            # Update rect position
             self.rect.x = round(self.position[0])
             self.rect.y = round(self.position[1])
+
         return distance
 
     def update(
-        self, player_position=None, current_time=None, projectile_group=None, all_sprites=None
+        self,
+        player_position=None,
+        current_time=None,
+        projectile_group=None,
+        all_sprites=None,
+        enemy_group=None,
     ):
         """Update enemy state."""
         if player_position:
-            self.move_towards(player_position)
+            self.move_towards(player_position, enemy_group)
         self.apply_visual_effects()
 
     def apply_visual_effects(self):
@@ -165,7 +241,12 @@ class RangedEnemy(Enemy):
         logger.debug(f"Ranged Enemy {self.id} created")
 
     def update(
-        self, player_position=None, current_time=None, projectile_group=None, all_sprites=None
+        self,
+        player_position=None,
+        current_time=None,
+        projectile_group=None,
+        all_sprites=None,
+        enemy_group=None,
     ):
         """Update ranged enemy behavior."""
         if (
@@ -174,16 +255,16 @@ class RangedEnemy(Enemy):
             or projectile_group is None
             or all_sprites is None
         ):
-            super().move_towards(player_position)
+            super().move_towards(player_position, enemy_group)
             return
         dx = player_position[0] - self.position[0]
         dy = player_position[1] - self.position[1]
         distance = math.sqrt(dx**2 + dy**2)
         if distance > self.preferred_distance + 50:
-            super().move_towards(player_position)
+            super().move_towards(player_position, enemy_group)
         elif distance < self.preferred_distance - 50:
             away_position = (self.position[0] - dx * 2, self.position[1] - dy * 2)
-            self.move_towards(away_position)
+            self.move_towards(away_position, enemy_group)
         if current_time - self.last_shot_time > self.attack_cooldown:
             self.shoot_at_player(player_position, projectile_group, all_sprites)
             self.last_shot_time = current_time
@@ -240,11 +321,16 @@ class ChargerEnemy(Enemy):
         logger.debug(f"Charger Enemy {self.id} created")
 
     def update(
-        self, player_position=None, current_time=None, projectile_group=None, all_sprites=None
+        self,
+        player_position=None,
+        current_time=None,
+        projectile_group=None,
+        all_sprites=None,
+        enemy_group=None,
     ):
         """Update charger enemy behavior."""
         if not player_position or current_time is None:
-            super().move_towards(player_position)
+            super().move_towards(player_position, enemy_group)
             return
         if self.is_charging:
             if current_time - self.charge_start_time > self.charge_duration:
@@ -265,7 +351,7 @@ class ChargerEnemy(Enemy):
         ):
             self.start_charge(player_position, current_time)
         else:
-            super().move_towards(player_position)
+            super().move_towards(player_position, enemy_group)
         super().apply_visual_effects()
 
     def start_charge(self, player_position, current_time: int):
@@ -287,8 +373,23 @@ class ChargerEnemy(Enemy):
         logger.debug(f"Charger Enemy {self.id} ended charge attack")
 
 
-def create_enemy(position, enemy_type=None):
-    """Factory function to create an enemy instance."""
+def create_enemy(position, enemy_type=None, attr_multipliers=None):
+    """
+    Factory function to create an enemy instance.
+
+    Args:
+        position: Initial (x, y) position of the enemy
+        enemy_type: Type of enemy to create ("basic", "ranged", "charger"). If None, a random type is chosen.
+        attr_multipliers: Dictionary of attribute multipliers (health, damage, speed) to apply
+
+    Returns:
+        Enemy instance of the specified type with attributes scaled by the multipliers
+    """
+    # Default multipliers
+    if attr_multipliers is None:
+        attr_multipliers = {"health": 1.0, "damage": 1.0, "speed": 1.0}
+
+    # Choose a random enemy type if none specified
     if enemy_type is None:
         weights = config.get(
             "enemy",
@@ -296,8 +397,36 @@ def create_enemy(position, enemy_type=None):
             default={Enemy.TYPE_BASIC: 60, Enemy.TYPE_RANGED: 20, Enemy.TYPE_CHARGER: 20},
         )
         enemy_type = random.choices(list(weights.keys()), list(weights.values()), k=1)[0]
+
+    # Create the enemy based on type
     if enemy_type == Enemy.TYPE_RANGED:
-        return RangedEnemy(position)
+        enemy = RangedEnemy(position)
     elif enemy_type == Enemy.TYPE_CHARGER:
-        return ChargerEnemy(position)
-    return Enemy(position)
+        enemy = ChargerEnemy(position)
+    else:
+        enemy = Enemy(position)
+
+    # Apply attribute multipliers
+    health_multiplier = attr_multipliers.get("health", 1.0)
+    damage_multiplier = attr_multipliers.get("damage", 1.0)
+    speed_multiplier = attr_multipliers.get("speed", 1.0)
+
+    # Scale health
+    if hasattr(enemy, "max_health"):
+        enemy.max_health = int(enemy.max_health * health_multiplier)
+        enemy.health = enemy.max_health
+
+    # Scale damage
+    if hasattr(enemy, "damage"):
+        enemy.damage = int(enemy.damage * damage_multiplier)
+    if hasattr(enemy, "projectile_damage"):
+        enemy.projectile_damage = int(enemy.projectile_damage * damage_multiplier)
+
+    # Scale speed
+    if hasattr(enemy, "speed"):
+        enemy.speed = enemy.speed * speed_multiplier
+    if hasattr(enemy, "normal_speed"):  # For charger enemies
+        enemy.normal_speed = enemy.normal_speed * speed_multiplier
+
+    logger.debug(f"Created {enemy_type} enemy with multipliers: {attr_multipliers}")
+    return enemy
