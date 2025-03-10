@@ -221,7 +221,7 @@ class Player(pygame.sprite.Sprite):
                         damage=damage,
                         map_width=self.map_width,
                         map_height=self.map_height,
-                        is_crit=is_crit
+                        is_crit=is_crit,
                     )
 
                     if is_crit:

@@ -99,8 +99,12 @@ class GameScene(Scene):
         # UI Config elements
         self.health_bar_width = config.get("ui", "health_bar_width", default=200)
         self.health_bar_height = config.get("ui", "health_bar_height", default=20)
-        self.health_bar_background = config.get("ui", "health_bar", "background_color", default=(80, 80, 80))
-        self.health_bar_foreground = config.get("ui", "health_bar", "fill_color", default=(255, 0, 0))
+        self.health_bar_background = config.get(
+            "ui", "health_bar", "background_color", default=(80, 80, 80)
+        )
+        self.health_bar_foreground = config.get(
+            "ui", "health_bar", "fill_color", default=(255, 0, 0)
+        )
         self.health_bar_border = config.get("ui", "health_bar", "border_color", default=(0, 0, 0))
 
     def _load_map(self):
@@ -357,7 +361,9 @@ class GameScene(Scene):
         health_bar_height = self.health_bar_height
         health_ratio = self.player.current_health / self.player.max_health
         # Background
-        pygame.draw.rect(self.screen, self.health_bar_background, (10, 10, health_bar_width, health_bar_height))
+        pygame.draw.rect(
+            self.screen, self.health_bar_background, (10, 10, health_bar_width, health_bar_height)
+        )
         # Foreground (health)
         pygame.draw.rect(
             self.screen,

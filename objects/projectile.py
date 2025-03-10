@@ -36,7 +36,9 @@ class Projectile(pygame.sprite.Sprite):
         if is_crit:
             self.color = config.get_color("gold")
         else:
-            self.color = config.get_color("red") if is_enemy_projectile else config.get_color("white")
+            self.color = (
+                config.get_color("red") if is_enemy_projectile else config.get_color("white")
+            )
         self.image.fill(self.color)
 
         # Set initial position and velocity

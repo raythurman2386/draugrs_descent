@@ -44,7 +44,7 @@ class TestGameLogger:
             file_path=str(log_file),
         )
         assert logger.name == f"init_logger_{log_to_file}_{log_to_console}"
-        assert logger.level == logging.DEBUG
+        assert logger.level == logging.INFO
         assert len(logger.handlers) == expected_handlers
         if log_to_file:
             assert any(isinstance(h, SafeRotatingFileHandler) for h in logger.handlers)
