@@ -522,7 +522,7 @@ class AssetManager:
             A pygame Surface with the character sprite
         """
         # Validate color
-        valid_colors = ["green", "purple", "red", "yellow"]
+        valid_colors = ["green", "purple", "red", "yellow", "grey", "orange", "rose", "brown"]
         if color not in valid_colors:
             logger.warning(f"Invalid character color '{color}', using 'green' instead")
             color = "green"

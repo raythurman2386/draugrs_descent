@@ -17,19 +17,19 @@ colors:
   orange: [255, 165, 0]
   dark_red: [139, 0, 0]
   purple: [255, 0, 255]
-  dark_blue: [20, 30, 50]  # Added for menu background
-  dark_grey: [50, 50, 50]  # Added for UI elements
+  dark_blue: [20, 30, 50] # Added for menu background
+  dark_grey: [50, 50, 50] # Added for UI elements
 
 # Game Mechanics
 mechanics:
   enemy_spawn:
-    interval: 1000  # milliseconds - base spawn interval
-    margin: 30  # Pixels offset from map edge for spawning enemies
-    min_interval: 250  # Minimum spawn interval in milliseconds (fastest possible spawn rate)
-    scaling_factor: 0.85  # Factor for exponential spawn rate increase (lower = faster increase)
-    scaling_interval: 30000  # Time between difficulty increases in milliseconds (30 seconds)
+    interval: 1000 # milliseconds - base spawn interval
+    margin: 30 # Pixels offset from map edge for spawning enemies
+    min_interval: 250 # Minimum spawn interval in milliseconds (fastest possible spawn rate)
+    scaling_factor: 0.85 # Factor for exponential spawn rate increase (lower = faster increase)
+    scaling_interval: 30000 # Time between difficulty increases in milliseconds (30 seconds)
   player:
-    shooting_range: 300  # Maximum distance player projectiles can travel
+    shooting_range: 300 # Maximum distance player projectiles can travel
 
 # Player Settings
 player:
@@ -42,12 +42,17 @@ player:
   attributes:
     max_health: 100
     movement_speed: 5
-    shot_cooldown: 500  # milliseconds
-    invincibility_duration: 300  # milliseconds
-    crit_chance: 0.05  # 5% Thinking for future upgrades and balancing
+    shot_cooldown: 500 # milliseconds
+    invincibility_duration: 300 # milliseconds
+    crit_chance: 0.05 # 5% Thinking for future upgrades and balancing
     crit_multiplier: 2.0
   appearance:
-    color: "green"  # Options: green, purple, red, yellow - matches scribble_dungeons characters
+    color: "green" # Options: green, purple, red, yellow, brown, grey, orange, rose - matches scribble_dungeons characters
+  # Future feature: Player upgrades
+  # upgrades:
+  #   max_health_increase: [10,20,30]
+  #   movement_speed_increase: [1,2,3]
+  #   shot_cooldown_decrease: [100,200,300]
 
 # Enemy Settings
 enemy:
@@ -60,11 +65,11 @@ enemy:
     speed: 2
   appearance:
     basic:
-      color: "purple"  # Basic enemies will use purple character sprite
+      color: "purple" # Basic enemies will use purple character sprite
     ranged:
-      color: "red"  # Ranged enemies will use red character sprite
+      color: "red" # Ranged enemies will use red character sprite
     charger:
-      color: "yellow"  # Charger enemies will use yellow character sprite
+      color: "yellow" # Charger enemies will use yellow character sprite
   behavior:
     separation_radius: 60
     separation_weight: 1.0
@@ -73,15 +78,15 @@ enemy:
   # New enemy type settings
   ranged:
     preferred_distance: 200
-    attack_cooldown: 2000  # milliseconds
+    attack_cooldown: 2000 # milliseconds
     projectile_speed: 5
     projectile_damage: 5
     speed: 1.5
     max_health: 15
   charger:
     charge_distance: 150
-    charge_cooldown: 3000  # milliseconds
-    charge_duration: 1000  # milliseconds
+    charge_cooldown: 3000 # milliseconds
+    charge_duration: 1000 # milliseconds
     charge_speed_multiplier: 3
     speed: 1.8
     max_health: 50
@@ -90,6 +95,14 @@ enemy:
     basic: 50
     ranged: 30
     charger: 20
+  # Add new enemy types below with their specific attributes
+  # new_type:
+  #   attributes:
+  #     max_health: x
+  #     damage: x
+  #     speed: x
+  #   specific_attributes:
+  #     # Any specific attributes for this type
 
 # Projectile Settings
 projectile:
@@ -104,7 +117,7 @@ ui:
   colors:
     text: "white"
   # General UI settings
-  default_theme: "blue"  # Default UI theme color
+  default theme: "blue" # Default UI theme color
   available_themes: ["blue", "green", "grey", "red", "yellow"]
   
   # Health bar settings  
@@ -117,16 +130,16 @@ ui:
     
   # Main menu settings
   main_menu:
-    background_color: "dark_blue"  # Reference to colors section
+    background_color: "dark_blue" # Reference to colors section
     panel:
-      width_ratio: 0.4  # Percentage of screen width
-      height_ratio: 0.4  # Percentage of screen height
+      width_ratio: 0.4 # Percentage of screen width
+      height_ratio: 0.4 # Percentage of screen height
     title:
       font_size: 36
       color: "white"
-      y_offset: -40  # Pixels above panel top
+      y_offset: -40 # Pixels above panel top
     buttons:
-      width_ratio: 0.7  # Percentage of panel width
+      width_ratio: 0.7 # Percentage of panel width
       height: 45
       spacing: 60
       start_y_offset: 60
@@ -135,7 +148,7 @@ ui:
   
   # Pause menu settings
   pause_menu:
-    overlay_color: [0, 0, 0, 128]  # RGBA with alpha for transparency
+    overlay_color: [0, 0, 0, 128] # RGBA with alpha for transparency
     panel:
       width_ratio: 0.4
       height_ratio: 0.6
@@ -151,7 +164,7 @@ ui:
   
   # Options menu settings
   options_menu:
-    overlay_color: [0, 0, 0, 200]  # RGBA with alpha for transparency
+    overlay_color: [0, 0, 0, 200] # RGBA with alpha for transparency
     panel:
       width_ratio: 0.7
       height_ratio: 0.7
@@ -179,8 +192,8 @@ ui:
       height: 20
       knob_size: 30
       text_color: "white"
-      track_color: "blue"  # Color theme for slider tracks
-      knob_color: "blue"   # Color theme for slider knobs
+      track_color: "blue" # Color theme for slider tracks
+      knob_color: "blue" # Color theme for slider knobs
   
   # Game HUD settings
   game_hud:
@@ -202,7 +215,7 @@ ui:
     wave_announcement:
       font_size: 40
       color: "yellow"
-      duration: 3000  # milliseconds
+      duration: 3000 # milliseconds
 
   # Game Over Menu UI Settings
   game_over:
@@ -226,30 +239,30 @@ ui:
 
 # Wave System Configuration
 waves:
-  transition_duration: 3000  # milliseconds for wave transition announcements
-  boss_wave_frequency: 5  # Boss wave every X waves
-  base_enemies_per_wave: 10  # Starting number of enemies in wave 1
-  enemies_increase_per_wave: 3  # Additional enemies added each wave
-  max_enemies_per_wave: 50  # Maximum enemies per wave
-  base_spawn_interval: 1000  # milliseconds between enemy spawns in wave 1
-  min_spawn_interval: 200  # Minimum milliseconds between spawns (fastest possible)
-  spawn_interval_decrease: 50  # Decrease in spawn interval per wave
+  transition_duration: 3000 # milliseconds for wave transition announcements
+  boss_wave_frequency: 5 # Boss wave every X waves
+  base_enemies_per_wave: 10 # Starting number of enemies in wave 1
+  enemies_increase_per_wave: 3 # Additional enemies added each wave
+  max_enemies_per_wave: 50 # Maximum enemies per wave
+  base_spawn_interval: 1000 # milliseconds between enemy spawns in wave 1
+  min_spawn_interval: 200 # Minimum milliseconds between spawns (fastest possible)
+  spawn_interval_decrease: 50 # Decrease in spawn interval per wave
   
   # Scaling factors for enemy attributes per wave
-  enemy_health_scaling: 0.03  # 5% increase in health per wave
-  enemy_damage_scaling: 0.03  # 3% increase in damage per wave
-  enemy_speed_scaling: 0.01  # 1% increase in speed per wave
+  enemy_health_scaling: 0.03 # approximately 3% increase in health per wave (not exactly due to floating point)
+  enemy_damage_scaling: 0.03 # approximately 3% increase in damage per wave (not exactly due to floating point)
+  enemy_speed_scaling: 0.01 # approximately 1% increase in speed per wave (not exactly due to floating point)
   
   # Boss wave specific multipliers
-  boss_health_multiplier: 4.0  # Boss enemies have 5x health
-  boss_damage_multiplier: 1.5  # Boss enemies have 2x damage
+  boss_health_multiplier: 4.0 # Boss enemies have 4x health
+  boss_damage_multiplier: 1.5 # Boss enemies have 1.5x damage
   
   # Enemy type distribution by wave (percentage of each type)
   enemy_distribution:
-    wave1: {"basic": 100, "ranged": 0, "charger": 0}  # Wave 1: 100% basic enemies
-    wave5: {"basic": 60, "ranged": 30, "charger": 10}  # Wave 5: 60% basic, 30% ranged, 10% charger
-    wave10: {"basic": 40, "ranged": 40, "charger": 20}  # Wave 10: 40% basic, 40% ranged, 20% charger
-    wave20: {"basic": 30, "ranged": 40, "charger": 30}  # Wave 20: 30% basic, 40% ranged, 30% charger
+    wave1: {"basic": 100, "ranged": 0, "charger": 0} # Wave 1: 100% basic enemies
+    wave5: {"basic": 60, "ranged": 30, "charger": 10} # Wave 5: 60% basic, 30% ranged, 10% charger
+    wave10: {"basic": 40, "ranged": 40, "charger": 20} # Wave 10: 40% basic, 40% ranged, 20% charger
+    wave20: {"basic": 30, "ranged": 40, "charger": 30} # Wave 20: 30% basic, 40% ranged, 30% charger
     wave25: {"basic": 20, "ranged": 40, "charger": 40}
     wave30: {"basic": 10, "ranged": 40, "charger": 50}
     wave35: {"basic": 0, "ranged": 40, "charger": 60}
@@ -257,54 +270,47 @@ waves:
     wave45: {"basic": 0, "ranged": 20, "charger": 80}
     wave50: {"basic": 0, "ranged": 10, "charger": 90}
 
-  bosses:
-    boss1: "charger"
-    boss2: "charger"
-    boss3: "charger"
-    boss4: "charger"
-    boss5: "charger"
-
 # Effect settings
 effects:
   screen_shake:
-    duration: 300   # Duration in milliseconds
-    intensity: 05   
+    duration: 300 # Duration in milliseconds
+    intensity: 0.5 
 
 # Particle Effects
 particles:
-  enabled: true  # Global toggle for particle effects
+  enabled: true # Global toggle for particle effects
   types:
-    hit:  # Projectile hit particles
-      count: 12  # Number of particles per effect
+    hit: # Projectile hit particles
+      count: 12 # Number of particles per effect
       min_speed: 2.0
       max_speed: 4.0
-      min_lifetime: 400  # ms
-      max_lifetime: 800  # ms
+      min_lifetime: 400 # ms
+      max_lifetime: 800 # ms
       colors: ["yellow", "orange", "red"]
-      size_range: [4, 8]  # min and max pixel size
-      gravity: 0.1  # Downward acceleration
-      fade_out: true  # Whether particles should fade out over lifetime
+      size_range: [4, 8] # min and max pixel size
+      gravity: 0.1 # Downward acceleration
+      fade_out: true # Whether particles should fade out over lifetime
     
-    death:  # Enemy death particles
+    death: # Enemy death particles
       count: 20
       min_speed: 3.0
       max_speed: 6.0
-      min_lifetime: 600  # ms
-      max_lifetime: 1200  # ms
+      min_lifetime: 600 # ms
+      max_lifetime: 1200 # ms
       colors: ["red", "dark_red", "orange"]
-      size_range: [5, 10]  # Larger particles
+      size_range: [5, 10] # Larger particles
       gravity: 0.05
       fade_out: true
       
-    powerup:  # Powerup collection particles
+    powerup: # Powerup collection particles
       count: 12
       min_speed: 1.0
       max_speed: 3.0
-      min_lifetime: 600  # ms
-      max_lifetime: 900  # ms
+      min_lifetime: 600 # ms
+      max_lifetime: 900 # ms
       colors: ["green", "yellow", "blue"]
       size_range: [2, 4]
-      gravity: -0.05  # Negative gravity makes particles float up
+      gravity: -0.05 # Negative gravity makes particles float up
       fade_out: true
 
 # Powerup Settings
@@ -314,15 +320,16 @@ powerups:
     height: 25
   effects:
     health_restore: 25
-    shield_duration: 5000  # milliseconds
+    shield_duration: 5000 # milliseconds
     speed_boost: 1.25
-    speed_duration: 5000  # milliseconds
+    speed_duration: 5000 # milliseconds
     weapon_boost: 2.0
-    weapon_duration: 5000  # milliseconds
+    weapon_duration: 5000 # milliseconds
     damage_boost: 1.5
-    damage_duration: 5000  # milliseconds
-  spawn_interval: 15000  # milliseconds between powerup spawns
-  spawn_chance: 0.1  # 10% chance of spawning a powerup each interval
+    damage_duration: 5000 # milliseconds
+    # Add new powerup effects here with their values
+  spawn_interval: 15000 # milliseconds between powerup spawns
+  spawn_chance: 0.1 # 10% chance of spawning a powerup each interval
   colors:
     health: [0, 255, 0]
     shield: [0, 0, 255]
@@ -339,29 +346,77 @@ scoring:
 
 # Asset Paths
 assets:
-  images:
-    path: "assets/images"
-    player: "player.png"
-    enemy: "enemy.png"
-    projectile: "projectile.png"
-    powerups:
-      health: "powerup_health.png"
-      shield: "powerup_shield.png"
-      speed: "powerup_speed.png"
-  sounds:
-    path: "assets/sounds"
-    background_music: "background.mp3"
-    shoot: "shoot.wav"
-    hit: "hit.wav"
-    powerup: "powerup.wav"
+  characters:
+    path: "assets/scribble_dungeons/characters"
+    player: "green_character.png"
+    enemy: "purple_character.png"
+    ranged_enemy: "red_character.png"
+    charger_enemy: "yellow_character.png"
+  sound_effects:
+    path: "assets/audio"
+    player_hit: "hurt2.ogg"
+    player_leftfoot: "footstep00.ogg"
+    player_rightfoot: "footstep01.ogg"
+    enemy_hit: "hit1.ogg"
+    powerup_collect: "pickup1.ogg"
+    button_click: "click1.ogg"
+    game_lost: "gamelost.ogg"
+    menu_navigate: "switch1.ogg"
+    wave_start: "pickup2.ogg"
+    wave_complete: "pickup3.ogg"
+    boss_wave_start: "pickup4.ogg"
+    boss_encounter: "pickup5.ogg"
+  scene_music:
+    path: "assets/audio/sceneaudio"
+    main_menu: "main_menu.ogg"
+    game: "game_music.ogg"
+    pause: "pause_menu.ogg"
+    game_over: "game_over.ogg"
   fonts:
     path: "assets/fonts"
-    main: "main_font.ttf"
+    default: "kenney_future.ttf"
+    narrow: "kenney_future_narrow.ttf"
+    square: "kenney_future_square.ttf"
     sizes:
-      title: 36
-      button: 24
-      small: 18
-      large: 32
+      title: 48
+      heading: 32
+      normal: 28
+      ui: 24
+      small: 20
+      extra_small: 16
+      tiny: 12
   interface:
     path: "assets/interface"
     spritesheet_path: "Spritesheet"
+
+# Future Features
+
+# Levels (Placeholder)
+# levels:
+# - name: "Level Name"
+#   map_file: "path/to/map/file.tmx"
+
+# Bosses with Unique Properties (Placeholder)
+# bosses:
+#   boss_name:
+#     type: "enemy_type"
+#     health_multiplier: x.x
+#     damage_multiplier: x.x
+#     special_ability: "description"
+
+# Controls Customization (Placeholder)
+controls:
+  movement:
+    left: "A"
+    right: "D"
+    up: "W"
+    down: "S"
+  actions:
+    pause: "ESC"
+    F1: "Turn on/off Debug Mode" 
+    F4: "Toggle Performance Metrics"
+
+# Achievements (Placeholder)
+# achievements:
+# - name: "Achievement Name"
+#   description: "Description of what the achievement requires"
