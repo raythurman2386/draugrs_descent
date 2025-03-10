@@ -77,6 +77,9 @@ class Player(pygame.sprite.Sprite):
         self.movement_speed = config.get("player", "attributes", "movement_speed", default=5)
         self.shooting_range = config.get("mechanics", "player", "shooting_range", default=250)
         self.projectile_speed = config.get("projectile", "attributes", "speed", default=10)
+        self.crit_chance = config.get("player", "attributes", "crit_chance", default=0.05)
+        self.crit_multiplier = config.get("player", "attributes", "crit_multiplier", default=2)
+        self.base_damage = config.get("projectile", "attributes", "damage", default=10)
 
         logger.info(f"Player initialized with {player_color} character sprite")
 
@@ -190,69 +193,41 @@ class Player(pygame.sprite.Sprite):
                 logger.debug(f"Weapon boost ended, shot cooldown reset to {self.shot_cooldown}ms")
 
     def shoot(self):
-        """Find the closest enemy and shoot a projectile at it if within range."""
-        # Log the current cooldown values for debugging
         current_time = pygame.time.get_ticks()
         time_since_last_shot = current_time - self.last_shot_time
-        logger.debug(
-            f"Current shot cooldown: {self.shot_cooldown}ms, Base cooldown: {self.base_shot_cooldown}ms"
-        )
-        logger.debug(
-            f"Time since last shot: {time_since_last_shot}ms (Need {self.shot_cooldown}ms to shoot)"
-        )
-
-        # Strict cooldown check - don't shoot if cooldown hasn't passed
         if time_since_last_shot < self.shot_cooldown:
-            logger.debug(
-                f"Shot refused: Cooldown not met ({time_since_last_shot}ms < {self.shot_cooldown}ms)"
-            )
             return None
 
-        # Find the closest enemy to aim at
         if self.enemy_group:
-            logger.debug(f"Enemy group count: {len(self.enemy_group)}")
             closest_enemy = find_closest_enemy(self.rect.center, self.enemy_group)
-
             if closest_enemy:
-                logger.debug(f"Closest enemy found at {closest_enemy.rect.center}")
-                # Calculate distance to the enemy
                 dx = closest_enemy.rect.centerx - self.rect.centerx
                 dy = closest_enemy.rect.centery - self.rect.centery
                 distance = math.sqrt(dx**2 + dy**2)
 
-                # Only shoot if enemy is within range
                 if distance <= self.shooting_range:
-                    # Calculate velocity towards the enemy
                     velocity = (
                         dx / distance * self.projectile_speed,
                         dy / distance * self.projectile_speed,
                     )
-
-                    # Pass map dimensions to the projectile if we have them
-                    map_width = getattr(self, "map_width", None)
-                    map_height = getattr(self, "map_height", None)
+                    is_crit = random.random() < self.crit_chance
+                    damage_multiplier = self.crit_multiplier if is_crit else 1
+                    base_damage = self.base_damage
+                    damage = base_damage * damage_multiplier
 
                     projectile = Projectile(
-                        self.rect.center, velocity, map_width=map_width, map_height=map_height
+                        self.rect.center,
+                        velocity,
+                        damage=damage,
+                        map_width=self.map_width,
+                        map_height=self.map_height,
+                        is_crit=is_crit
                     )
 
-                    logger.debug(f"Projectile velocity: {velocity}, distance to enemy: {distance}")
-                    logger.debug(f"Projectile position: {projectile.rect.center}")
-
-                    # Update last shot time here too, as a double-check
+                    if is_crit:
+                        logger.info(f"Critical hit! Damage increased to {damage}")
                     self.last_shot_time = current_time
-                    logger.debug(
-                        f"Shot fired, next shot available at: {current_time + self.shot_cooldown}"
-                    )
-
                     return projectile
-                else:
-                    logger.debug(
-                        f"Enemy at distance {distance} is beyond shooting range of {self.shooting_range}"
-                    )
-            else:
-                logger.debug("No valid target found")
-
         return None
 
     def take_damage(self, amount):

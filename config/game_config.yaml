@@ -13,6 +13,9 @@ colors:
   white: [255, 255, 255]
   blue: [0, 0, 255]
   yellow: [255, 255, 0]
+  gold: [255, 215, 0]
+  orange: [255, 165, 0]
+  dark_red: [139, 0, 0]
   purple: [255, 0, 255]
   dark_blue: [20, 30, 50]  # Added for menu background
   dark_grey: [50, 50, 50]  # Added for UI elements
@@ -41,6 +44,8 @@ player:
     movement_speed: 5
     shot_cooldown: 500  # milliseconds
     invincibility_duration: 300  # milliseconds
+    crit_chance: 0.05  # 5% Thinking for future upgrades and balancing
+    crit_multiplier: 2.0
   appearance:
     color: "green"  # Options: green, purple, red, yellow - matches scribble_dungeons characters
 
@@ -97,9 +102,6 @@ projectile:
 # UI Elements
 ui:
   colors:
-    health_bar_background: "dark_grey"
-    health_bar_fill: "green"
-    health_bar_border: "black"
     text: "white"
   # General UI settings
   default_theme: "blue"  # Default UI theme color
@@ -234,13 +236,13 @@ waves:
   spawn_interval_decrease: 50  # Decrease in spawn interval per wave
   
   # Scaling factors for enemy attributes per wave
-  enemy_health_scaling: 0.1  # 10% increase in health per wave
-  enemy_damage_scaling: 0.05  # 5% increase in damage per wave
-  enemy_speed_scaling: 0.03  # 3% increase in speed per wave
+  enemy_health_scaling: 0.03  # 5% increase in health per wave
+  enemy_damage_scaling: 0.03  # 3% increase in damage per wave
+  enemy_speed_scaling: 0.01  # 1% increase in speed per wave
   
   # Boss wave specific multipliers
-  boss_health_multiplier: 5.0  # Boss enemies have 5x health
-  boss_damage_multiplier: 2.0  # Boss enemies have 2x damage
+  boss_health_multiplier: 4.0  # Boss enemies have 5x health
+  boss_damage_multiplier: 1.5  # Boss enemies have 2x damage
   
   # Enemy type distribution by wave (percentage of each type)
   enemy_distribution:
@@ -248,12 +250,25 @@ waves:
     wave5: {"basic": 60, "ranged": 30, "charger": 10}  # Wave 5: 60% basic, 30% ranged, 10% charger
     wave10: {"basic": 40, "ranged": 40, "charger": 20}  # Wave 10: 40% basic, 40% ranged, 20% charger
     wave20: {"basic": 30, "ranged": 40, "charger": 30}  # Wave 20: 30% basic, 40% ranged, 30% charger
+    wave25: {"basic": 20, "ranged": 40, "charger": 40}
+    wave30: {"basic": 10, "ranged": 40, "charger": 50}
+    wave35: {"basic": 0, "ranged": 40, "charger": 60}
+    wave40: {"basic": 0, "ranged": 30, "charger": 70}
+    wave45: {"basic": 0, "ranged": 20, "charger": 80}
+    wave50: {"basic": 0, "ranged": 10, "charger": 90}
+
+  bosses:
+    boss1: "charger"
+    boss2: "charger"
+    boss3: "charger"
+    boss4: "charger"
+    boss5: "charger"
 
 # Effect settings
 effects:
   screen_shake:
     duration: 300   # Duration in milliseconds
-    intensity: 15   # Maximum pixel offset (increased for more noticeable effect)
+    intensity: 05   
 
 # Particle Effects
 particles:
@@ -304,6 +319,10 @@ powerups:
     speed_duration: 5000  # milliseconds
     weapon_boost: 0.5
     weapon_duration: 5000  # milliseconds
+    damage_boost: 1.5
+    damage_duration: 5000  # milliseconds
+  spawn_interval: 15000  # milliseconds between powerup spawns
+  spawn_chance: 0.1  # 10% chance of spawning a powerup each interval
   colors:
     health: [0, 255, 0]
     shield: [0, 0, 255]

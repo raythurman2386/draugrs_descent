@@ -27,7 +27,6 @@ class GameScene(Scene):
     def __init__(self):
         super().__init__()
         logger.info("Initializing GameScene")
-        self.particle_system = ParticleSystem()
         self._initialize_game()
         self.play_scene_music("game")
 
@@ -35,6 +34,7 @@ class GameScene(Scene):
         """Set up or reset game objects and state."""
         # Initialize sprite groups and player
         self.player = Player()
+        self.particle_system = ParticleSystem()
         self.all_sprites = pygame.sprite.Group(self.player)
         self.enemy_group = pygame.sprite.Group()
         self.projectile_group = pygame.sprite.Group()
@@ -95,6 +95,13 @@ class GameScene(Scene):
         )  # 3 seconds
         self.wave_transition_text = "Prepare for the next wave!"
         self.is_boss_wave = False
+
+        # UI Config elements
+        self.health_bar_width = config.get("ui", "health_bar_width", default=200)
+        self.health_bar_height = config.get("ui", "health_bar_height", default=20)
+        self.health_bar_background = config.get("ui", "health_bar", "background_color", default=(80, 80, 80))
+        self.health_bar_foreground = config.get("ui", "health_bar", "fill_color", default=(255, 0, 0))
+        self.health_bar_border = config.get("ui", "health_bar", "border_color", default=(0, 0, 0))
 
     def _load_map(self):
         """Load tiled map and configure camera, with fallback if loading fails."""
@@ -346,20 +353,20 @@ class GameScene(Scene):
         display_width, display_height = self.screen.get_size()
 
         # --- Health Bar ---
-        health_bar_width = config.get("ui", "health_bar_width", default=200)
-        health_bar_height = config.get("ui", "health_bar_height", default=20)
+        health_bar_width = self.health_bar_width
+        health_bar_height = self.health_bar_height
         health_ratio = self.player.current_health / self.player.max_health
         # Background
-        pygame.draw.rect(self.screen, (80, 80, 80), (10, 10, health_bar_width, health_bar_height))
+        pygame.draw.rect(self.screen, self.health_bar_background, (10, 10, health_bar_width, health_bar_height))
         # Foreground (health)
         pygame.draw.rect(
             self.screen,
-            (255, 0, 0),
+            self.health_bar_foreground,
             (10, 10, int(health_bar_width * health_ratio), health_bar_height),
         )
         # Border
         pygame.draw.rect(
-            self.screen, (255, 255, 255), (10, 10, health_bar_width, health_bar_height), 2
+            self.screen, self.health_bar_border, (10, 10, health_bar_width, health_bar_height), 2
         )
 
         # Health text

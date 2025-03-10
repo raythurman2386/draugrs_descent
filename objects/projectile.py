@@ -18,6 +18,7 @@ class Projectile(pygame.sprite.Sprite):
         is_enemy_projectile: bool = False,
         map_width: int = None,
         map_height: int = None,
+        is_crit: bool = False,
     ):
         super().__init__()
         # Assign a unique ID to each projectile
@@ -32,7 +33,10 @@ class Projectile(pygame.sprite.Sprite):
         self.image = pygame.Surface((self.width, self.height))
 
         # Cache color based on projectile type
-        self.color = config.get_color("red") if is_enemy_projectile else config.get_color("white")
+        if is_crit:
+            self.color = config.get_color("gold")
+        else:
+            self.color = config.get_color("red") if is_enemy_projectile else config.get_color("white")
         self.image.fill(self.color)
 
         # Set initial position and velocity
