@@ -12,11 +12,11 @@ class AssetManager:
     """Manages game assets including fonts, images, UI elements, and other resources."""
 
     # Asset paths
-    FONT_PATH = "assets/fonts"
-    IMAGE_PATH = "assets/images"
-    INTERFACE_PATH = "assets/interface"
-    SCRIBBLE_DUNGEONS_PATH = "assets/scribble_dungeons"
-    MAP_PATH = "assets/maps"
+    FONT_PATH = os.path.join("assets", "fonts")
+    IMAGE_PATH = os.path.join("assets", "images")
+    INTERFACE_PATH = os.path.join("assets", "interface")
+    SCRIBBLE_DUNGEONS_PATH = os.path.join("assets", "scribble_dungeons")
+    MAP_PATH = os.path.join("assets", "maps")
 
     # Font filenames
     FONTS = {

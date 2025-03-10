@@ -65,7 +65,7 @@ class GameLogger:
     @staticmethod
     def get_logger(
         name,
-        level=DEBUG,
+        level=INFO,
         log_to_file=True,
         log_to_console=True,
         file_path=DEFAULT_LOG_FILE,

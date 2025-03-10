@@ -255,7 +255,7 @@ class GameScene(Scene):
             self.wave_manager.update(current_time)
 
             # Check if wave is complete
-            if not self.wave_manager.wave_in_progress:
+            if not self.wave_manager.wave_in_progress and len(self.enemy_group) == 0:
                 self.wave_in_progress = False
                 # Add wave completion bonus
                 self.score_manager.add_score(self.wave_manager.current_wave * 100)
@@ -306,6 +306,7 @@ class GameScene(Scene):
             self.score_manager.save_high_score()
             game_state.change_state(GameState.GAME_OVER)
             game_over = self.scene_manager.scenes["game_over"]
+            self.play_sound("game_lost")
             game_over.final_score = self.score_manager.current_score
             game_over.high_score = self.score_manager.high_score
             game_over.enemies_killed = self.enemies_killed

@@ -30,6 +30,10 @@ class SoundManager:
         "button_click": "click1.ogg",
         "game_lost": "gamelost.ogg",
         "menu_navigate": "switch1.ogg",
+        "wave_start": "pickup2.ogg",
+        "wave_complete": "pickup3.ogg",
+        "boss_wave_start": "pickup4.ogg",
+        "boss_encounter": "pickup5.ogg",
     }
 
     def __init__(self):

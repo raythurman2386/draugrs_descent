@@ -32,6 +32,8 @@ class GameOverScene(Scene):
         self.ui_theme = config.get("ui", "default_theme", default="blue")
         self.load_ui_assets()
 
+        self.play_scene_music("game_over")
+
     def load_ui_assets(self):
         """Load UI assets for the game over screen."""
         logger.debug(f"Loading game over UI assets with theme: {self.ui_theme}")
