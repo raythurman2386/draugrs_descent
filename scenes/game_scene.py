@@ -625,7 +625,7 @@ class GameScene(Scene):
 
     def drop_powerup(self, position):
         """Spawn a random powerup at the given position."""
-        powerup_type = random.choice(["health", "shield", "weapon"])
+        powerup_type = random.choice(["health", "shield", "weapon", "speed", "damage"])
         powerup = Powerup(position, powerup_type)
         self.powerup_group.add(powerup)
         self.all_sprites.add(powerup)

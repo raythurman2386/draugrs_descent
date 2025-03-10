@@ -315,9 +315,9 @@ powerups:
   effects:
     health_restore: 25
     shield_duration: 5000  # milliseconds
-    speed_boost: 2
+    speed_boost: 1.25
     speed_duration: 5000  # milliseconds
-    weapon_boost: 0.5
+    weapon_boost: 2.0
     weapon_duration: 5000  # milliseconds
     damage_boost: 1.5
     damage_duration: 5000  # milliseconds
@@ -328,6 +328,7 @@ powerups:
     shield: [0, 0, 255]
     speed: [255, 255, 0]
     weapon: [255, 165, 0]
+    damage: [255, 0, 255]
 
 # Scoring
 scoring:

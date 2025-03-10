@@ -3,14 +3,12 @@ import math
 from utils.logger import GameLogger
 from managers import config
 
-# Get a logger for the powerup module
 logger = GameLogger.get_logger("powerup")
 
 
 class Powerup(pygame.sprite.Sprite):
     """A class representing a powerup that can be collected by the player."""
 
-    # Counter for unique powerup IDs
     next_id = 1
 
     def __init__(self, position: tuple[int, int], powerup_type: str):
@@ -18,11 +16,10 @@ class Powerup(pygame.sprite.Sprite):
 
         Args:
             position: The (x, y) coordinates for the powerup.
-            powerup_type: The type of powerup ("health", "shield", "weapon").
+            powerup_type: The type of powerup ("health", "shield", "weapon", "speed", "damage").
         """
         super().__init__()
 
-        # Assign a unique ID to each powerup
         self.id = Powerup.next_id
         Powerup.next_id += 1
 
@@ -30,7 +27,6 @@ class Powerup(pygame.sprite.Sprite):
         self.active = True
         self.creation_time = pygame.time.get_ticks()
 
-        # Cache configuration values
         self.lifespan = config.get("powerups", "attributes", "lifespan", default=10000)
         self.base_width = config.get("powerups", "dimensions", "width", default=30)
         self.base_height = config.get("powerups", "dimensions", "height", default=30)
@@ -38,10 +34,8 @@ class Powerup(pygame.sprite.Sprite):
         self.pulse_size = 4
         self.color = config.get("powerups", "colors", self.type, default=(255, 255, 255))
 
-        # Animation properties
         self.pulse_factor = 0
 
-        # Create initial image
         self._create_image()
         self.rect = self.image.get_rect(center=position)
 
@@ -86,6 +80,31 @@ class Powerup(pygame.sprite.Sprite):
                 (int(current_width / 2 - current_width / 5), int(current_height * 3 / 4)),
             ]
             pygame.draw.polygon(self.image, (255, 255, 255), points)
+        elif self.type == "speed":
+            # Draw an arrow pointing up
+            points = [
+                (int(current_width / 2), int(current_height / 4)),
+                (int(current_width * 3 / 4), int(current_height * 3 / 4)),
+                (int(current_width / 2 + current_width / 5), int(current_height * 3 / 4)),
+                (int(current_width / 2), int(current_height / 2)),
+                (int(current_width / 2 - current_width / 5), int(current_height * 3 / 4)),
+                (int(current_width / 4), int(current_height * 3 / 4)),
+            ]
+            pygame.draw.polygon(self.image, (255, 255, 255), points)
+        elif self.type == "damage":
+            # Draw a star symbol
+            star_size = min(current_width, current_height) / 3
+            points = []
+            for i in range(5):
+                angle = i * 4 * math.pi / 5
+                x = center[0] + star_size * math.cos(angle)
+                y = center[1] + star_size * math.sin(angle)
+                points.append((x, y))
+                angle += 2 * math.pi / 5
+                x = center[0] + star_size * 0.5 * math.cos(angle)
+                y = center[1] + star_size * 0.5 * math.sin(angle)
+                points.append((x, y))
+            pygame.draw.polygon(self.image, (255, 255, 255), points)
 
         self.mask = pygame.mask.from_surface(self.image)
 
@@ -102,7 +121,7 @@ class Powerup(pygame.sprite.Sprite):
             return False
 
         if self.type == "health":
-            health_restore = config.get("powerups", "effects", "health_restore", default=30)
+            health_restore = config.get("powerups", "effects", "health_restore", default=25)
             original_health = player.current_health
             player.current_health = min(player.current_health + health_restore, player.max_health)
             health_gained = player.current_health - original_health
@@ -118,12 +137,27 @@ class Powerup(pygame.sprite.Sprite):
             logger.info(f"Shield powerup applied. Player invincible for {shield_duration}ms")
 
         elif self.type == "weapon":
-            weapon_boost_duration = config.get(
-                "powerups", "effects", "weapon_boost_duration", default=10000
-            )
-            player.activate_weapon_boost(weapon_boost_duration)
+            weapon_boost = config.get("powerups", "effects", "weapon_boost", default=2)
+            weapon_duration = config.get("powerups", "effects", "weapon_duration", default=5000)
+            player.activate_weapon_boost(weapon_boost, weapon_duration)
             logger.info(
-                f"Weapon boost powerup applied. Player's fire rate increased for {weapon_boost_duration}ms"
+                f"Weapon boost powerup applied. Player's fire rate increased by {weapon_boost}x for {weapon_duration}ms"
+            )
+
+        elif self.type == "speed":
+            speed_boost = config.get("powerups", "effects", "speed_boost", default=1.25)
+            speed_duration = config.get("powerups", "effects", "speed_duration", default=5000)
+            player.activate_speed_boost(speed_boost, speed_duration)
+            logger.info(
+                f"Speed boost powerup applied. Player's speed increased by {speed_boost}x for {speed_duration}ms"
+            )
+
+        elif self.type == "damage":
+            damage_boost = config.get("powerups", "effects", "damage_boost", default=1.5)
+            damage_duration = config.get("powerups", "effects", "damage_duration", default=5000)
+            player.activate_damage_boost(damage_boost, damage_duration)
+            logger.info(
+                f"Damage boost powerup applied. Player's damage increased by {damage_boost}x for {damage_duration}ms"
             )
 
         self.deactivate()
@@ -138,16 +172,12 @@ class Powerup(pygame.sprite.Sprite):
         """Update the powerup state each frame."""
         current_time = pygame.time.get_ticks()
 
-        # Check if powerup has expired
         if current_time - self.creation_time > self.lifespan:
             logger.debug(f"Powerup {self.id} expired")
             self.kill()
             return
 
-        # Update pulsing animation
         self.pulse_factor = (math.sin(current_time * self.pulse_speed * 0.001) + 1) / 2
-
-        # Recreate the image with the new pulse size
         prev_center = self.rect.center
         self._create_image()
         self.rect = self.image.get_rect(center=prev_center)
