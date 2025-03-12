@@ -15,13 +15,14 @@ class MainMenuScene(Scene):
         # Menu options
         self.menu_options = [
             {"text": "Start Game", "action": "game"},
+            {"text": "Upgrades", "action": "upgrades"},
             {"text": "Options", "action": "options"},
             {"text": "Exit", "action": "exit"},
         ]
         self.selected_option = 0
 
         # UI theme from config
-        self.ui_theme = config.get("ui", "default_theme", default="blue")
+        self.ui_theme = config.get("ui", "default theme", default="blue")
         self.load_ui_assets()
 
         # Start playing main menu music
@@ -123,6 +124,8 @@ class MainMenuScene(Scene):
                 self.play_sound("menu_navigate")
             elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
                 self.select_current_option()
+            elif event.key == pygame.K_ESCAPE:
+                pygame.event.post(pygame.event.Event(pygame.QUIT))
 
         # Handle mouse events
         elif event.type == pygame.MOUSEMOTION:
@@ -147,6 +150,7 @@ class MainMenuScene(Scene):
     def select_current_option(self):
         """Execute the action for the currently selected option."""
         self.play_sound("button_click")
+
         action = self.menu_options[self.selected_option]["action"]
         if action == "exit":
             self.done = True
@@ -164,7 +168,21 @@ class MainMenuScene(Scene):
                 options_scene = self.scene_manager.scenes.get("options")
                 if options_scene:
                     options_scene.set_previous_scene("main_menu")
+            elif action == "upgrades" and self.scene_manager:
+                # Set the previous scene to return to main menu
+                upgrades_scene = self.scene_manager.scenes.get("upgrades")
+                if upgrades_scene:
+                    upgrades_scene.set_previous_scene("main_menu")
+
             self.switch_to_scene(action)
+
+    def process_events(self, events):
+        """Process all events and return True if we need to exit."""
+        for event in events:
+            if event.type == pygame.QUIT:
+                return True
+            self.handle_event(event)
+        return False
 
     def update(self):
         """Update menu logic."""

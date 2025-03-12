@@ -1,7 +1,7 @@
 import pygame
 import math
 import random
-from managers import config, game_asset_manager
+from managers import config, game_asset_manager, CurrencyManager
 from utils.logger import GameLogger
 from objects.projectile import Projectile
 
@@ -220,10 +220,30 @@ class Enemy(pygame.sprite.Sprite):
         )
         self.flash_red()
         if self.health <= 0:
+            # Drop currency before dying
+            self.drop_currency()
             self.kill()
             logger.debug(f"Enemy {self.id} died")
             return True
         return False
+
+    def drop_currency(self):
+        """Drop currency when enemy is defeated."""
+        # Get currency settings from config
+        min_drop = config.get("player", "upgrades", "currency", "min_drop", default=1)
+        max_drop = config.get("player", "upgrades", "currency", "max_drop", default=10)
+        drop_chance = config.get("player", "upgrades", "currency", "drop_chance", default=1.0)
+
+        # Check if currency should be dropped based on chance
+        if random.random() <= drop_chance:
+            # Calculate random amount between min and max
+            amount = random.randint(min_drop, max_drop)
+
+            # Add currency to the player's total
+            currency_manager = CurrencyManager()
+            currency_manager.add_currency(amount)
+
+            logger.debug(f"Enemy {self.id} dropped {amount} currency")
 
 
 class RangedEnemy(Enemy):

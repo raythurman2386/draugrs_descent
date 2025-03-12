@@ -4,6 +4,7 @@ from .game_scene import GameScene
 from .pause_menu import PauseMenuScene
 from .game_over import GameOverScene
 from .options_menu import OptionsMenuScene
+from .upgrade_menu import UpgradeMenuScene
 
 __all__ = [
     "Scene",
@@ -12,4 +13,5 @@ __all__ = [
     "PauseMenuScene",
     "GameOverScene",
     "OptionsMenuScene",
+    "UpgradeMenuScene",
 ]

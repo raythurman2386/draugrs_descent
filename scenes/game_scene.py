@@ -46,6 +46,9 @@ class GameScene(Scene):
         self.player.enemy_group = self.enemy_group
         self.player.projectile_group = self.projectile_group
 
+        # Initialize currency manager for HUD display
+        self.currency_manager = self.player.currency_manager
+
         # Timing and state variables
         self.last_spawn_time = pygame.time.get_ticks()
         self.paused = False
@@ -383,6 +386,17 @@ class GameScene(Scene):
             (255, 255, 255),
             10 + health_bar_width + 10,
             10 + health_bar_height // 2,
+        )
+
+        # --- Currency Display ---
+        currency_name = config.get("player", "upgrades", "currency", "name", default="Souls")
+        currency_text = f"{currency_name}: {self.currency_manager.get_currency()}"
+        self.draw_text(
+            currency_text,
+            20,
+            (255, 215, 0),  # Gold color
+            10,
+            10 + health_bar_height + 10,
         )
 
         # --- Score ---

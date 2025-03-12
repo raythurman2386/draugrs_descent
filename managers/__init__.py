@@ -5,6 +5,7 @@ from .score_manager import ScoreManager
 from .config_manager import config
 from .asset_manager import AssetManager, game_asset_manager
 from .wave_manager import WaveManager
+from .currency_manager import CurrencyManager
 
 __all__ = [
     "SceneManager",
@@ -17,4 +18,5 @@ __all__ = [
     "game_asset_manager",
     "config",
     "WaveManager",
+    "CurrencyManager",
 ]

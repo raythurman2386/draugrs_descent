@@ -15,6 +15,7 @@ class PauseMenuScene(Scene):
         # Menu options
         self.menu_options = [
             {"text": "Resume", "action": "game"},
+            {"text": "Upgrades", "action": "upgrades"},
             {"text": "Options", "action": "options"},
             {"text": "Main Menu", "action": "main_menu"},
             {"text": "Exit", "action": "exit"},
@@ -196,6 +197,13 @@ class PauseMenuScene(Scene):
                 options_scene = self.scene_manager.scenes.get("options")
                 if options_scene:
                     options_scene.set_previous_scene("pause")
+            self.switch_to_scene(action)
+        elif action == "upgrades":
+            # Set the previous scene to return to pause menu
+            if self.scene_manager:
+                upgrades_scene = self.scene_manager.scenes.get("upgrades")
+                if upgrades_scene:
+                    upgrades_scene.set_previous_scene("pause")
             self.switch_to_scene(action)
         else:
             self.switch_to_scene(action)

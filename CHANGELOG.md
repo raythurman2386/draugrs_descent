@@ -36,6 +36,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Wave information display in game HUD showing current wave and remaining enemies
 - Comprehensive unit and integration tests for wave system functionality
 - Enemy movement enhancement
+- Player upgrade system with permanent stat improvements
+- Currency system for collecting and spending souls
+- Upgrade menu for purchasing player upgrades
+- Enemy currency drops when defeated
 
 ### Changed
 - Refactored monolithic game class into scene-based architecture

@@ -2,7 +2,7 @@ import pygame
 import math
 from utils import find_closest_enemy, GameLogger
 from .projectile import Projectile
-from managers import config, game_asset_manager
+from managers import config, game_asset_manager, CurrencyManager
 import random
 
 logger = GameLogger.get_logger("player")
@@ -29,7 +29,10 @@ class Player(pygame.sprite.Sprite):
         start_y = config.get("player", "start_position", "y", default=300)
         self.rect.center = position if position else (start_x, start_y)
 
-        # Player attributes
+        # Currency manager for upgrades
+        self.currency_manager = CurrencyManager()
+
+        # Player attributes - before upgrades
         self.max_health = config.get("player", "attributes", "max_health", default=100)
         self.current_health = self.max_health
         self.invincible = False
@@ -87,7 +90,66 @@ class Player(pygame.sprite.Sprite):
         self.crit_multiplier = config.get("player", "attributes", "crit_multiplier", default=2)
         self.base_damage = config.get("projectile", "attributes", "damage", default=10)
 
+        # Apply purchased upgrades
+        self.apply_upgrades()
+
         logger.info(f"Player initialized with {player_color} character sprite")
+
+    def apply_upgrades(self):
+        """Apply permanent upgrades from the currency manager to the player."""
+        upgrades = self.currency_manager.get_upgrades()
+        logger.info(f"Applying player upgrades: {upgrades}")
+
+        # Apply health upgrade
+        if "health" in upgrades:
+            health_level = upgrades["health"]
+            health_per_level = config.get(
+                "player", "upgrades", "types", "health", "effect_per_level", default=10
+            )
+            health_increase = health_level * health_per_level
+            self.max_health += health_increase
+            self.current_health = self.max_health
+            logger.info(f"Applied health upgrade: +{health_increase} health (Level {health_level})")
+
+        # Apply speed upgrade
+        if "speed" in upgrades:
+            speed_level = upgrades["speed"]
+            speed_per_level = config.get(
+                "player", "upgrades", "types", "speed", "effect_per_level", default=0.2
+            )
+            speed_increase = speed_level * speed_per_level
+            self.base_movement_speed += speed_increase
+            self.movement_speed = self.base_movement_speed
+            logger.info(f"Applied speed upgrade: +{speed_increase} speed (Level {speed_level})")
+
+        # Apply fire rate upgrade (reduces cooldown)
+        if "fire_rate" in upgrades:
+            fire_rate_level = upgrades["fire_rate"]
+            cooldown_reduction_per_level = config.get(
+                "player", "upgrades", "types", "fire_rate", "effect_per_level", default=0.1
+            )
+            cooldown_reduction = fire_rate_level * cooldown_reduction_per_level
+            # Apply as a percentage reduction (e.g., level 1 = 10% faster)
+            reduction_factor = 1.0 - cooldown_reduction
+            if reduction_factor < 0.3:  # Cap at 70% reduction to prevent too fast firing
+                reduction_factor = 0.3
+            self.base_shot_cooldown = (
+                config.get("player", "attributes", "shot_cooldown", default=500) * reduction_factor
+            )
+            self.shot_cooldown = self.base_shot_cooldown
+            logger.info(
+                f"Applied fire rate upgrade: {int((1-reduction_factor)*100)}% faster (Level {fire_rate_level})"
+            )
+
+        # Apply damage upgrade
+        if "damage" in upgrades:
+            damage_level = upgrades["damage"]
+            damage_per_level = config.get(
+                "player", "upgrades", "types", "damage", "effect_per_level", default=2
+            )
+            damage_increase = damage_level * damage_per_level
+            self.base_damage += damage_increase
+            logger.info(f"Applied damage upgrade: +{damage_increase} damage (Level {damage_level})")
 
     def apply_visual_effects(self):
         """Apply visual effects like flashing to the player sprite."""

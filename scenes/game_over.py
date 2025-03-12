@@ -23,6 +23,7 @@ class GameOverScene(Scene):
         # Menu options
         self.menu_options = [
             {"text": "Restart", "action": "game"},
+            {"text": "Upgrades", "action": "upgrades"},
             {"text": "Main Menu", "action": "main_menu"},
             {"text": "Exit", "action": "exit"},
         ]
@@ -196,6 +197,13 @@ class GameOverScene(Scene):
                     game_scene.reset()
                     # Ensure the game isn't paused
                     game_scene.paused = False
+
+            elif action == "upgrades" and self.scene_manager:
+                # Set the previous scene to return to game over menu
+                upgrades_scene = self.scene_manager.scenes.get("upgrades")
+                if upgrades_scene:
+                    upgrades_scene.set_previous_scene("game_over")
+
             self.switch_to_scene(action)
 
     def update(self):

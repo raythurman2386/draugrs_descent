@@ -1,5 +1,13 @@
 import pygame
-from scenes import MainMenuScene, GameScene, PauseMenuScene, GameOverScene, OptionsMenuScene
+import os
+from scenes import (
+    MainMenuScene,
+    GameScene,
+    PauseMenuScene,
+    GameOverScene,
+    OptionsMenuScene,
+    UpgradeMenuScene,
+)
 from managers import SceneManager, config
 from utils.logger import GameLogger
 
@@ -38,6 +46,7 @@ def main():
     scene_manager.add_scene("pause", PauseMenuScene())
     scene_manager.add_scene("game_over", GameOverScene())
     scene_manager.add_scene("options", OptionsMenuScene())
+    scene_manager.add_scene("upgrades", UpgradeMenuScene())
 
     logger.info("All scenes initialized")
 
